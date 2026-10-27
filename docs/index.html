@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>design-forge · 规则手册</title>
+<meta name="description" content="design-forge 的规则目录、视觉配方与用法：31 条确定性检查规则，8 套 OKLCH 配方。">
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <span class="brand">design-forge v0.2.0</span>
+    <nav aria-label="页面导航">
+      <a href="#rules">规则</a>
+      <a href="#recipes">配方</a>
+      <a href="#use">用法</a>
+      <a href="https://github.com/aifeifei798/design-forge">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="hero wrap">
+    <h1>把 AI 味当缺陷处理</h1>
+    <p>一套自建的前端界面工作流：不可豁免的红线、可执行的确定性检查器、八套材料配方。没有二进制、没有遥测、没有联网；规则跑在 Node 上，三十秒出结果。</p>
+    <div class="stats">
+      <div><strong>15</strong>Floor 红线</div>
+      <div><strong>12</strong>Reflex 默认</div>
+      <div><strong>4</strong>Warn 提示</div>
+      <div><strong>8</strong>套配方</div>
+    </div>
+  </div>
+
+  <section id="rules">
+    <div class="wrap">
+      <h2>规则目录</h2>
+      <p class="lede">Floor 必须清零；Reflex 要么修，要么在交付里写明豁免理由；Warn 至少看一眼。检查器退出码：<code>0</code> 无 FAIL，<code>2</code> 有 FAIL。</p>
+
+      <h3><span class="tier fail">FAIL</span> 不可豁免</h3>
+      <table>
+        <caption>15 条，任何情况下都必须修。</caption>
+        <thead><tr><th class="n">#</th><th>规则 id</th><th>问题与改法</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="n">1</td>
+            <td><code>color/literal</code></td>
+            <td>颜色没走 token<br><span class="slug">把色值提进 :root / @theme 的 token 块，组件只引用 var(--x) 或语义类</span></td>
+          </tr>
+          <tr>
+            <td class="n">2</td>
+            <td><code>tokens/missing</code></td>
+            <td>有颜色但没有 token 块<br><span class="slug">加 :root 或 @theme，把所有色值集中声明</span></td>
+          </tr>
+          <tr>
+            <td class="n">3</td>
+            <td><code>motion/transition-all</code></td>
+            <td>transition: all<br><span class="slug">只过渡真正变化的属性：color、background-color、transform、opacity</span></td>
+          </tr>
+          <tr>
+            <td class="n">4</td>
+            <td><code>motion/layout-property</code></td>
+            <td>过渡布局属性<br><span class="slug">width/height/top/left 的过渡会掉帧，改用 transform</span></td>
+          </tr>
+          <tr>
+            <td class="n">5</td>
+            <td><code>motion/no-reduced-motion</code></td>
+            <td>有动画但没有 reduced-motion 兜底<br><span class="slug">加 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important } }</span></td>
+          </tr>
+          <tr>
+            <td class="n">6</td>
+            <td><code>layout/overflow-x-hidden</code></td>
+            <td>overflow-x: hidden<br><span class="slug">用 overflow-x: clip，hidden 会把 sticky/滚动容器一起弄坏</span></td>
+          </tr>
+          <tr>
+            <td class="n">7</td>
+            <td><code>layout/100vw</code></td>
+            <td>100vw<br><span class="slug">100vw 在带滚动条的桌面会溢出，用 100% 或 dvw</span></td>
+          </tr>
+          <tr>
+            <td class="n">8</td>
+            <td><code>a11y/html-lang</code></td>
+            <td>&lt;html&gt; 没有 lang<br><span class="slug">补 lang="zh-CN" 之类</span></td>
+          </tr>
+          <tr>
+            <td class="n">9</td>
+            <td><code>a11y/img-alt</code></td>
+            <td>&lt;img&gt; 没有 alt<br><span class="slug">装饰图 alt=""，内容图写清楚内容</span></td>
+          </tr>
+          <tr>
+            <td class="n">10</td>
+            <td><code>a11y/heading-skip</code></td>
+            <td>标题层级跳级<br><span class="slug">h1 → h2 → h3，不跳级</span></td>
+          </tr>
+          <tr>
+            <td class="n">11</td>
+            <td><code>a11y/focus-visible</code></td>
+            <td>项目里没有 :focus-visible<br><span class="slug">给所有可交互元素加 focus-visible 环，且不做延迟</span></td>
+          </tr>
+          <tr>
+            <td class="n">12</td>
+            <td><code>slop/purple-blue-gradient</code></td>
+            <td>紫→蓝渐变<br><span class="slug">换掉；强调靠权重、尺寸或一个真实色块</span></td>
+          </tr>
+          <tr>
+            <td class="n">13</td>
+            <td><code>slop/eyebrow</code></td>
+            <td>标题上方的 eyebrow / 逐字间距小标签<br><span class="slug">删掉那行标签，让标题自己扛</span></td>
+          </tr>
+          <tr>
+            <td class="n">14</td>
+            <td><code>render/overflow-x</code></td>
+            <td>渲染后出现横向溢出<br><span class="slug">找出溢出元素，改 minmax(0,1fr) / overflow-wrap / 缩小固定宽度</span></td>
+          </tr>
+          <tr>
+            <td class="n">15</td>
+            <td><code>render/console-error</code></td>
+            <td>控制台报错<br><span class="slug">先修错误再谈视觉</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3><span class="tier reflex">REFLEX</span> 有理由可豁免</h3>
+      <table>
+        <caption>12 条，是模型的默认反射，有真实理由可以保留。</caption>
+        <thead><tr><th class="n">#</th><th>规则 id</th><th>问题与改法</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="n">1</td>
+            <td><code>color/pure-extreme</code></td>
+            <td>纯黑或纯白<br><span class="slug">往主体色的色相里偏一点（oklch 里降一点 L 或加一点 C）</span></td>
+          </tr>
+          <tr>
+            <td class="n">2</td>
+            <td><code>font/literal</code></td>
+            <td>字体族写死在规则里<br><span class="slug">字体也只走 token（--font-display / --font-body）</span></td>
+          </tr>
+          <tr>
+            <td class="n">3</td>
+            <td><code>motion/bounce-easing</code></td>
+            <td>回弹缓动<br><span class="slug">用指数型 ease-out，别用过冲曲线</span></td>
+          </tr>
+          <tr>
+            <td class="n">4</td>
+            <td><code>layout/viewport-height</code></td>
+            <td>100vh / h-screen<br><span class="slug">移动端地址栏会跳，首屏用 100svh 或 dvh</span></td>
+          </tr>
+          <tr>
+            <td class="n">5</td>
+            <td><code>a11y/outline-none</code></td>
+            <td>outline: none 没有替代焦点样式<br><span class="slug">用 focus-visible:ring / :focus-visible { outline: 2px } 代替</span></td>
+          </tr>
+          <tr>
+            <td class="n">6</td>
+            <td><code>a11y/input-label</code></td>
+            <td>输入框没有可访问名称<br><span class="slug">加 &lt;label for&gt; 或 aria-label</span></td>
+          </tr>
+          <tr>
+            <td class="n">7</td>
+            <td><code>slop/side-accent-border</code></td>
+            <td>卡片/提示条上的彩色侧边线<br><span class="slug">用背景色分层或留白，不要 1px 以上的侧边条</span></td>
+          </tr>
+          <tr>
+            <td class="n">8</td>
+            <td><code>slop/hard-shadow</code></td>
+            <td>零模糊硬阴影<br><span class="slug">只有配方声明了硬阴影才用，否则用带偏移和模糊的柔和阴影</span></td>
+          </tr>
+          <tr>
+            <td class="n">9</td>
+            <td><code>slop/nested-card</code></td>
+            <td>卡片套卡片<br><span class="slug">内层去掉边框/背景，用排版分层</span></td>
+          </tr>
+          <tr>
+            <td class="n">10</td>
+            <td><code>slop/gradient-text</code></td>
+            <td>渐变文字<br><span class="slug">强调用字重或字号</span></td>
+          </tr>
+          <tr>
+            <td class="n">11</td>
+            <td><code>type/tiny-text</code></td>
+            <td>小于 12px 的文字<br><span class="slug">正文最小 14px，说明文字最小 12px</span></td>
+          </tr>
+          <tr>
+            <td class="n">12</td>
+            <td><code>type/measure</code></td>
+            <td>正文行宽超过 78ch<br><span class="slug">正文 measure 控制在 65–75ch</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3><span class="tier warn">WARN</span> 提示</h3>
+      <table>
+        <caption>4 条，只提示不阻塞。</caption>
+        <thead><tr><th class="n">#</th><th>规则 id</th><th>问题与改法</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="n">1</td>
+            <td><code>slop/emoji</code></td>
+            <td>emoji 当图形用<br><span class="slug">换成真实图标或干脆不要图标</span></td>
+          </tr>
+          <tr>
+            <td class="n">2</td>
+            <td><code>craft/important</code></td>
+            <td>!important 过多<br><span class="slug">提高选择器特异性或用 @layer</span></td>
+          </tr>
+          <tr>
+            <td class="n">3</td>
+            <td><code>craft/z-index</code></td>
+            <td>z-index 用大整数<br><span class="slug">建立 0–50 的层级 token</span></td>
+          </tr>
+          <tr>
+            <td class="n">4</td>
+            <td><code>render/no-puppeteer</code></td>
+            <td>渲染档不可用<br><span class="slug">npm i -g puppeteer-core 并提供 Chrome</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="recipes">
+    <div class="wrap">
+      <h2>八套配方</h2>
+      <p class="lede">配方是材料，不是排版稿：它定纸、墨、强调色、字体、圆角、密度与动效曲线，不定区块顺序。发牌命令会给三个候选，选那个能扛住你素材的。</p>
+      <div class="grid-recipes">
+        <article class="recipe">
+          <h3>Broadsheet</h3>
+          <span class="slug">broadsheet · editorial · normal</span>
+          <div class="chips">
+            <span class="chip" style="background: var(--sw-broadsheet-paper)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-broadsheet-ink)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-broadsheet-accent)" aria-hidden="true"></span>
+          </div>
+          <p>报纸、纸墨、严肃但不古板。签名：一条贯穿版面的细墨线，把标题和正文分开</p>
+        </article>
+        <article class="recipe">
+          <h3>Signal</h3>
+          <span class="slug">signal · technical · compact</span>
+          <div class="chips">
+            <span class="chip" style="background: var(--sw-signal-paper)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-signal-ink)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-signal-accent)" aria-hidden="true"></span>
+          </div>
+          <p>深色工程界面、等宽、一个电光色。签名：一个实时数据块，数字用等宽字直接摆在首屏</p>
+        </article>
+        <article class="recipe">
+          <h3>Linen</h3>
+          <span class="slug">linen · soft · airy</span>
+          <div class="chips">
+            <span class="chip" style="background: var(--sw-linen-paper)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-linen-ink)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-linen-accent)" aria-hidden="true"></span>
+          </div>
+          <p>棉麻、温和、留白大。签名：一张真实的材质照片，边缘用大圆角裁切</p>
+        </article>
+        <article class="recipe">
+          <h3>Atelier</h3>
+          <span class="slug">atelier · luxury · airy</span>
+          <div class="chips">
+            <span class="chip" style="background: var(--sw-atelier-paper)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-atelier-ink)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-atelier-accent)" aria-hidden="true"></span>
+          </div>
+          <p>高级、克制、字号差距大。签名：一个巨大的产品名，下面一行极小的规格说明</p>
+        </article>
+        <article class="recipe">
+          <h3>Arcade</h3>
+          <span class="slug">arcade · playful · normal</span>
+          <div class="chips">
+            <span class="chip" style="background: var(--sw-arcade-paper)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-arcade-ink)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-arcade-accent)" aria-hidden="true"></span>
+          </div>
+          <p>明快、有脾气、色块敢用。签名：一个能点的开关，按下去整块色域变色</p>
+        </article>
+        <article class="recipe">
+          <h3>Quarry</h3>
+          <span class="slug">quarry · brutalist · compact</span>
+          <div class="chips">
+            <span class="chip" style="background: var(--sw-quarry-paper)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-quarry-ink)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-quarry-accent)" aria-hidden="true"></span>
+          </div>
+          <p>混凝土、硬边、极少量橙色。签名：一条 4px 的实心分隔线，把首屏切成两块</p>
+        </article>
+        <article class="recipe">
+          <h3>Harbor</h3>
+          <span class="slug">harbor · product · compact</span>
+          <div class="chips">
+            <span class="chip" style="background: var(--sw-harbor-paper)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-harbor-ink)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-harbor-accent)" aria-hidden="true"></span>
+          </div>
+          <p>产品界面、冷静、密度高。签名：一个真实的表格，行高紧凑，数字右对齐等宽</p>
+        </article>
+        <article class="recipe">
+          <h3>Nocturne</h3>
+          <span class="slug">nocturne · dark · airy</span>
+          <div class="chips">
+            <span class="chip" style="background: var(--sw-nocturne-paper)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-nocturne-ink)" aria-hidden="true"></span>
+            <span class="chip" style="background: var(--sw-nocturne-accent)" aria-hidden="true"></span>
+          </div>
+          <p>影院感、暗、暖色高光。签名：一张全幅暗调照片，标题压在照片暗部上</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="use">
+    <div class="wrap">
+      <h2>用法</h2>
+      <p class="lede">作为 OpenCode / Claude Code / Codex 的 skill 安装，或者只把它当命令行 linter 用。</p>
+      <pre><code>git clone https://github.com/aifeifei798/design-forge.git
+cd design-forge
+ln -sfn "$PWD/skill" ~/.agents/skills/design-forge
+
+node skill/scripts/tokens.mjs deal --genre product
+node skill/scripts/tokens.mjs emit harbor --tailwind --out src/forge-tokens.css
+node skill/scripts/forge.mjs src/            # 静态检查
+node skill/scripts/forge.mjs src/ --render   # 八宽度渲染（需 Chrome + puppeteer-core）</code></pre>
+      <p class="lede">会话里说「做个落地页」会自动加载；也可以 <code>/forge</code>、<code>/forge-audit</code>、<code>/forge-tokens</code> 直接进对应流程。</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>MIT · 借鉴来源见 <a href="https://github.com/aifeifei798/design-forge/blob/main/NOTICE.md">NOTICE.md</a></span>
+    <span>规则与配方由脚本生成，本页也被自家检查器检查过（0 FAIL）</span>
+  </div>
+</footer>
+
+</body>
+</html>

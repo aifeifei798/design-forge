@@ -69,8 +69,15 @@ for (let i = 0; i < argv.length; i++) {
 }
 
 if (listRules) {
-  for (const [id, [tier, title, fix]] of Object.entries(RULES)) {
-    console.log(`${tier.padEnd(6)} ${id.padEnd(26)} ${title}\n       fix: ${fix}`);
+  if (json) {
+    console.log(JSON.stringify({
+      count: Object.keys(RULES).length,
+      rules: Object.entries(RULES).map(([id, [tier, title, fix]]) => ({ id, tier, title, fix })),
+    }, null, 2));
+  } else {
+    for (const [id, [tier, title, fix]] of Object.entries(RULES)) {
+      console.log(`${tier.padEnd(6)} ${id.padEnd(26)} ${title}\n       fix: ${fix}`);
+    }
   }
   process.exit(0);
 }
@@ -132,6 +139,24 @@ function tokenRanges(text) {
 
 const inRanges = (ranges, i) => ranges.some(([s, e]) => i >= s && i <= e);
 
+// 标记语言里只检查"代码"：标签（含 class/style 等属性）与 <style> 块；
+// 标签之间的自然语言正文不是代码，不做规则扫描（否则文档页会被自己误杀）。
+function codeOnlyProjection(text) {
+  const ranges = [];
+  for (const m of text.matchAll(/<style\b[^>]*>[\s\S]*?<\/style>/gi)) ranges.push([m.index, m.index + m[0].length]);
+  for (const m of text.matchAll(/<[a-zA-Z/!][^>]*>/g)) ranges.push([m.index, m.index + m[0].length]);
+  ranges.sort((a, b) => a[0] - b[0]);
+  let out = "", cursor = 0;
+  for (const [s, e] of ranges) {
+    if (s < cursor) continue;
+    out += text.slice(cursor, s).replace(/[^\n]/g, " ");
+    out += text.slice(s, e);
+    cursor = e;
+  }
+  out += text.slice(cursor).replace(/[^\n]/g, " ");
+  return out;
+}
+
 function classAttrs(text) {
   const out = [];
   const re = /class(?:Name)?\s*=\s*(?:"([^"]*)"|'([^']*)'|\{`([^`]*)`\}|\{["'`]([^"'`]*)["'`]\})/g;
@@ -192,14 +217,15 @@ for (const file of files) {
   const text = source.get(file);
   const ext = extname(file).toLowerCase();
   const isMarkup = [".html", ".htm", ".jsx", ".tsx", ".vue", ".svelte", ".astro"].includes(ext);
-  const ranges = tokenRanges(text);
-  const classes = classAttrs(text);
+  const code = isMarkup ? codeOnlyProjection(text) : text;
+  const ranges = tokenRanges(code);
+  const classes = classAttrs(code);
 
   /* --- 颜色 token --- */
   if (ext === ".css" || isMarkup) {
     let m;
     COLOR_RE.lastIndex = 0;
-    while ((m = COLOR_RE.exec(text))) {
+    while ((m = COLOR_RE.exec(code))) {
       if (inRanges(ranges, m.index)) continue;
       const lit = m[0];
       if (isExtreme(lit)) add(file, "color/pure-extreme", m.index, `pure ${lit}`);
@@ -210,45 +236,48 @@ for (const file of files) {
     // Tailwind 任意色值：bg-[#fff] / text-[oklch(...)]
     const arb = /(?:bg|text|border|ring|fill|stroke|from|via|to|shadow|divide|outline|accent|caret|decoration)-\[(#[0-9a-fA-F]{3,8}|rgba?\([^\]]*\)|oklch\([^\]]*\)|hsla?\([^\]]*\))\]/g;
     let m;
-    while ((m = arb.exec(text))) {
+    while ((m = arb.exec(code))) {
       if (isExtreme(m[1])) add(file, "color/pure-extreme", m.index, `pure ${m[1]} in arbitrary class`);
       else add(file, "color/literal", m.index, `arbitrary colour class ${m[0]}`);
     }
   }
-  if ({ ".css": 1, ".html": 1, ".htm": 1 }[ext] && text.match(COLOR_RE) && !hasTokenBlock) {
+  if ({ ".css": 1, ".html": 1, ".htm": 1 }[ext] && code.match(COLOR_RE) && !hasTokenBlock) {
     add(file, "tokens/missing", null, "page uses colours but the project has no :root / @theme token block");
   }
   if (ext === ".css") {
     const ff = /font-family\s*:\s*([^;]+);/g;
     let m;
-    while ((m = ff.exec(text))) {
+    while ((m = ff.exec(code))) {
       if (inRanges(ranges, m.index)) continue;
-      add(file, "font/literal", m.index, `font-family: ${m[1].trim()}`);
+      const value = m[1].trim();
+      if (/^var\(/.test(value)) continue; // 已经是 token 引用
+      if (/^(inherit|initial|unset|revert|inherit)$/.test(value)) continue;
+      add(file, "font/literal", m.index, `font-family: ${value}`);
     }
   }
 
   /* --- 动效 --- */
   let m;
   const tall = /transition\s*:\s*all\b|transition-all\b/g;
-  while ((m = tall.exec(text))) add(file, "motion/transition-all", m.index, m[0].trim());
+  while ((m = tall.exec(code))) add(file, "motion/transition-all", m.index, m[0].trim());
   const tlayout = /transition(?:-property)?\s*:[^;]*\b(width|height|top|left|right|bottom|margin|padding|inset)\b/g;
-  while ((m = tlayout.exec(text))) add(file, "motion/layout-property", m.index, m[0].trim());
-  const hasAnim = /@keyframes|animation\s*:|animate-/.test(text);
-  if (hasAnim && !/prefers-reduced-motion/.test(text)) {
-    add(file, "motion/no-reduced-motion", text.search(/@keyframes|animation\s*:|animate-/), "animation without reduced-motion fallback");
+  while ((m = tlayout.exec(code))) add(file, "motion/layout-property", m.index, m[0].trim());
+  const hasAnim = /@keyframes|animation\s*:|animate-/.test(code);
+  if (hasAnim && !/prefers-reduced-motion/.test(code)) {
+    add(file, "motion/no-reduced-motion", code.search(/@keyframes|animation\s*:|animate-/), "animation without reduced-motion fallback");
   }
   const bounce = /cubic-bezier\(\s*[\d.]+\s*,\s*(-[\d.]+|[1-9][\d.]*)\s*,/g;
-  while ((m = bounce.exec(text))) add(file, "motion/bounce-easing", m.index, `overshoot easing ${m[0]}`);
+  while ((m = bounce.exec(code))) add(file, "motion/bounce-easing", m.index, `overshoot easing ${m[0]}`);
   const bounceKw = /\b(bounce|elastic)\b.*(ease|timing)|ease-\[?bounce/g;
-  while ((m = bounceKw.exec(text))) add(file, "motion/bounce-easing", m.index, m[0].trim());
+  while ((m = bounceKw.exec(code))) add(file, "motion/bounce-easing", m.index, m[0].trim());
 
   /* --- 布局 --- */
   const oxh = /overflow-x\s*:\s*hidden|overflow-x-hidden/g;
-  while ((m = oxh.exec(text))) add(file, "layout/overflow-x-hidden", m.index, m[0].trim());
+  while ((m = oxh.exec(code))) add(file, "layout/overflow-x-hidden", m.index, m[0].trim());
   const vw = /\b100vw\b/g;
-  while ((m = vw.exec(text))) add(file, "layout/100vw", m.index, "100vw");
+  while ((m = vw.exec(code))) add(file, "layout/100vw", m.index, "100vw");
   const vh = /\b100vh\b|min-h-screen|\bh-screen\b/g;
-  while ((m = vh.exec(text))) add(file, "layout/viewport-height", m.index, m[0].trim());
+  while ((m = vh.exec(code))) add(file, "layout/viewport-height", m.index, m[0].trim());
 
   /* --- a11y --- */
   if (isMarkup) {
@@ -274,14 +303,14 @@ for (const file of files) {
     add(file, "a11y/focus-visible", null, "interactive elements exist but no :focus-visible anywhere in the project");
   }
   const outnone = /outline\s*:\s*none|\boutline-none\b/g;
-  while ((m = outnone.exec(text))) {
-    const windowText = text.slice(Math.max(0, m.index - 200), m.index + 200);
+  while ((m = outnone.exec(code))) {
+    const windowText = code.slice(Math.max(0, m.index - 200), m.index + 200);
     if (!/focus-visible/.test(windowText)) add(file, "a11y/outline-none", m.index, m[0].trim());
   }
 
   /* --- slop --- */
   const grad = /linear-gradient\(([^)]*)\)/gi;
-  while ((m = grad.exec(text))) {
+  while ((m = grad.exec(code))) {
     const body = m[1].toLowerCase();
     if (/(purple|violet|indigo|fuchsia|magenta)/.test(body) && /(blue|cyan|indigo|violet)/.test(body)) {
       add(file, "slop/purple-blue-gradient", m.index, "purple→blue gradient");
@@ -301,16 +330,16 @@ for (const file of files) {
     if (/\btext-\[(9|10|11)px\]/.test(v)) add(file, "type/tiny-text", c.index, v.match(/text-\[\d+px\]/)[0]);
   }
   const eyebrowCss = /letter-spacing\s*:\s*0?\.(0[5-9]|[1-9])[0-9]*em[^}]*\}[^{]*\{[^}]*text-transform\s*:\s*uppercase|text-transform\s*:\s*uppercase[^}]*letter-spacing\s*:\s*0?\.(0[5-9]|[1-9])/g;
-  while ((m = eyebrowCss.exec(text))) add(file, "slop/eyebrow", m.index, "uppercase + tracked letters in CSS");
+  while ((m = eyebrowCss.exec(code))) add(file, "slop/eyebrow", m.index, "uppercase + tracked letters in CSS");
   const sideBorder = /border-(?:left|right)\s*:\s*[2-9]px/g;
-  while ((m = sideBorder.exec(text))) add(file, "slop/side-accent-border", m.index, m[0]);
+  while ((m = sideBorder.exec(code))) add(file, "slop/side-accent-border", m.index, m[0]);
   const hardShadow = /box-shadow\s*:\s*(?:inset\s+)?\d+px\s+\d+px\s+0(?:px)?(?![.\d])/g;
-  while ((m = hardShadow.exec(text))) add(file, "slop/hard-shadow", m.index, m[0]);
+  while ((m = hardShadow.exec(code))) add(file, "slop/hard-shadow", m.index, m[0]);
   if (ext === ".css") {
     // 卡片套卡片（后代写法）：.card .inner-card / .card__body .card
     const descRe = /([^{};]*)\{/g;
     let dm;
-    while ((dm = descRe.exec(text))) {
+    while ((dm = descRe.exec(code))) {
       const sel = dm[1].trim();
       const parts = sel.split(/[\s>+~]+/).filter((s) => /card/i.test(s));
       if (parts.length >= 2) add(file, "slop/nested-card", dm.index, `nested card selector: ${sel.slice(0, 60)}`);
@@ -340,15 +369,15 @@ for (const file of files) {
 
   /* --- 排版 --- */
   const tiny = /font-size\s*:\s*([0-9.]+)px/g;
-  while ((m = tiny.exec(text))) if (parseFloat(m[1]) < 12) add(file, "type/tiny-text", m.index, m[0]);
+  while ((m = tiny.exec(code))) if (parseFloat(m[1]) < 12) add(file, "type/tiny-text", m.index, m[0]);
   const fontShorthand = /\bfont\s*:\s*(?:[a-z]+\s+)?([0-9.]+)px/g;
-  while ((m = fontShorthand.exec(text))) if (parseFloat(m[1]) < 12) add(file, "type/tiny-text", m.index, m[0]);
+  while ((m = fontShorthand.exec(code))) if (parseFloat(m[1]) < 12) add(file, "type/tiny-text", m.index, m[0]);
   const measureRe = /max-width\s*:\s*(\d+)ch/g;
-  while ((m = measureRe.exec(text))) if (Number(m[1]) > 78) add(file, "type/measure", m.index, m[0]);
-  const important = (text.match(/!important/g) || []).length;
-  if (important > 3) add(file, "craft/important", text.search(/!important/), `${important}× !important`);
+  while ((m = measureRe.exec(code))) if (Number(m[1]) > 78) add(file, "type/measure", m.index, m[0]);
+  const important = (code.match(/!important/g) || []).length;
+  if (important > 3) add(file, "craft/important", code.search(/!important/), `${important}× !important`);
   const zRe = /z-index\s*:\s*(\d{4,})/g;
-  while ((m = zRe.exec(text))) add(file, "craft/z-index", m.index, m[0]);
+  while ((m = zRe.exec(code))) add(file, "craft/z-index", m.index, m[0]);
 
   /* 配方豁免：quarry 允许硬阴影 */
   if (recipeSlug === "quarry") {

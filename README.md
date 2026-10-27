@@ -2,6 +2,8 @@
 
 自建的 UI 设计与前端视觉质量工作流。一个 skill、一套检查器、一套配方，替代 `hallmark`、`impeccable`、`tailwind-design-system` 三家的叠加。
 
+**规则手册（在线）**：https://aifeifei798.github.io/design-forge/ · **变更记录**：[CHANGELOG.md](CHANGELOG.md)
+
 - **无二进制、无遥测、无运行时下载**，只用 Node 标准库
 - **静态检查永远先跑**，渲染档可选（复用全局 `puppeteer-core` + Chrome）
 - **配方是数据**：8 套 `/ 改 JSON 就多一套
@@ -24,8 +26,19 @@ skill/
     ├── forge.mjs            确定性检查器
     └── tokens.mjs           发牌与 token 生成
 fixtures/                    自测样例（bad 全违规，good 全干净）
-commands/forge.md            opencode 斜杠命令（/forge）
+commands/                    opencode 斜杠命令（/forge、/forge-audit、/forge-redo、/forge-tokens）
+tools/build-docs.mjs         从规则与配方生成 docs/ 手册
+docs/                        生成的规则手册（GitHub Pages）
 ```
+
+命令一览：
+
+| 命令 | 用途 | 特点 |
+|---|---|---|
+| `/forge <需求>` | 建页面 / 改页面 / 任意设计任务 | 走完整流程（pre-flight → 问一次 → 配方 → 建 → 查） |
+| `/forge-audit <目标>` | 只审查 | 只读，子代理运行，不改代码 |
+| `/forge-redo <目标>` | 重做页面 | 先记录 links/字段/handler/标题，改完逐一比对 |
+| `/forge-tokens [slug]` | 看/生成配方 token | 只出 token，不动页面 |
 
 ## 安装
 
@@ -35,7 +48,8 @@ cd design-forge
 
 # 全局 skill（符号链接，改仓库即生效）
 ln -sfn "$PWD/skill" ~/.agents/skills/design-forge
-ln -sfn "$PWD/commands/forge.md" ~/.config/opencode/commands/forge.md
+mkdir -p ~/.config/opencode/commands
+ln -sfn "$PWD"/commands/*.md ~/.config/opencode/commands/
 ```
 
 - OpenCode 的搜索路径包含 `~/.agents/skills/`、`~/.config/opencode/skills/`、`~/.claude/skills/`、项目内 `.opencode/skills/`；放哪个都行，符号链接是为了改仓库即生效。
@@ -63,8 +77,12 @@ node skill/scripts/forge.mjs src/ --render
 # 截图（落 .forge/shots/）
 node skill/scripts/forge.mjs src/index.html --shots
 
-# 规则目录
+# 规则目录（人读 / 机器读）
 node skill/scripts/forge.mjs --list-rules
+node skill/scripts/forge.mjs --list-rules --json
+
+# 重新生成规则手册
+node tools/build-docs.mjs
 ```
 
 退出码：`0` 无 FAIL，`2` 有 FAIL，`1` 运行失败。可以直接当 CI 门禁。
@@ -72,8 +90,7 @@ node skill/scripts/forge.mjs --list-rules
 ## 自测
 
 ```bash
-node skill/scripts/forge.mjs fixtures/bad.html   # 期望 18 FAIL / 退出码 2
-node skill/scripts/forge.mjs fixtures/good.html  # 期望 0 FAIL / 退出码 0
+npm test       # bad 必须 18 FAIL/退出 2，good 必须 0，docs 必须 0
 ```
 
 ## 为什么自己攒

@@ -1,10 +1,10 @@
 ---
 name: design-forge
 description: "前端界面设计与视觉质量的统一工作流（自建：规则 + 配方 + 确定性检查器）：新建或改造网页、落地页、官网、产品界面、仪表盘、组件、表单、空态、设计系统与 token。包含抗 AI 味红线（Floor）、排版/色彩/间距/动效手艺规则、Tailwind v4 CSS-first token 方案、8 套视觉配方、检查器 forge.mjs（静态 + 可选八宽度渲染）。中文触发：做页面、做官网、做落地页、写 UI、调样式、配色、排版、动效、空态、设计系统、审查界面。不用于纯图片提示词生成或后端任务。"
-version: 0.1.0
+version: 0.2.0
 license: MIT
 metadata:
-  forge/version: "0.1.0"
+  forge/version: "0.2.0"
 ---
 
 # design-forge
