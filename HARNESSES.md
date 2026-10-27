@@ -61,7 +61,10 @@ ZCode 的命令在 `~/.zcode/commands/*.md`，frontmatter 支持 `description` /
 
 ## 在 ZCode 里用 context-mode
 
-ZCode 不跑 OpenCode 插件，`context-mode-opencode-v2` 那套 `Plugin.define` 包装层用不了。两种替代：
+ZCode 不跑 OpenCode 插件，`context-mode-opencode-v2` 那套 `Plugin.define` 包装层用不了。做法见 [context-mode-zcode](https://github.com/aifeifei798/context-mode-zcode)：
 
-1. **只接 MCP（安全，推荐先试）**：在 `~/.zcode/cli/config.json` 的 `mcp.servers` 里加 `context-mode`（`command: npx, args: ["-y","context-mode"]`），拿到 11 个 `ctx_*` 工具；没有路由拦截，靠提示词自觉。
-2. **整套插件（实验性）**：context-mode 包自带 Claude 插件结构（`.claude-plugin/plugin.json` + `hooks/hooks.json` + MCP 声明），而 ZCode 兼容 Claude 插件清单与 `${CLAUDE_PLUGIN_ROOT}`，所以可以把它当一个本地市场插件装。ZCode 的 hook 协议是 Claude 兼容的（snake_case + `hookSpecificOutput`），但**这条路径没有在本仓库验证过**，启用前先确认 `hooks/hooks.json` 里的 matcher 与 ZCode 工具名对得上。
+1. **常驻服务 + HTTP（推荐）**：`supergateway` 把 context-mode 的 stdio MCP 转成 Streamable HTTP，交给 `systemd --user` 常驻；ZCode 用 `{"type":"http","url":"http://127.0.0.1:8765/mcp"}` 连接。一条命令：`node install.mjs`。
+2. **整套插件（实验性）**：context-mode 包自带 Claude 插件结构（`.claude-plugin/plugin.json` + `hooks/hooks.json`），ZCode 兼容 Claude 清单与 `${CLAUDE_PLUGIN_ROOT}`，可以作为本地市场插件装，能拿到 PreToolUse 拦截；但 matcher 与 ZCode 工具名的对应关系没有逐条验证。
+3. **每次会话 stdio（兜底）**：让 ZCode 自己拉起 `node cli.bundle.mjs`，项目身份跟随工作区，但每个会话一个进程、各建索引。
+
+常驻服务的三个语义差异：项目身份固定（`CONTEXT_MODE_PROJECT_DIR`）、知识库跨项目共享（`CONTEXT_MODE_DIR`）、没有 PreToolUse 拦截。
