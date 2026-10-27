@@ -13,6 +13,7 @@
 - **规则改动必须带测试**：`fixtures/bad.html` 加触发点 + `package.json` 的 `test:bad` 期望数字同步。
 - **数字要真**：交付里写的 `FAIL/REFLEX/WARN` 必须是 `forge.mjs` 真跑出来的，不许手写。
 - **中文优先**：规则文案、审查报告、提交信息用中文；代码标识符用英文。
+- **单份 reference 控制在 50KB 以内**：本地 context-mode 插件对 >50KB 的 Read 会重定向到 ctx 工具，reference 太厚会导致加载路径变形。
 
 ## 命令
 
