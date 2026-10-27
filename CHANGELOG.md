@@ -4,6 +4,20 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-27
+
+### Added
+
+- `tools/link.mjs`：一条命令把 skill 与命令链到 OpenCode / ZCode / Claude Code / Codex 的发现目录，`--dry-run` 先看路径。
+- `HARNESSES.md`：四个 harness 的安装路径、调用方式、上下文与体积限制对照。
+- 命令文件改为 harness 中立：新增 `argument-hint` 与 `skills: design-forge`（ZCode 认），正文不再写死 OpenCode 专用路径。
+
+### Changed
+
+- `description` 重写并前移触发词：ZCode 注入描述时截断到 250 字符，触发词必须落在前 250 内。
+- `SKILL.md` 增加脚本目录解析规则（多个 harness 的安装路径不同，`<skill-dir>` 按顺序探测）。
+- 版本 0.4.0。
+
 ## [0.3.0] - 2026-10-27
 
 ### Added

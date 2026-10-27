@@ -1,13 +1,15 @@
 ---
 name: design-forge
-description: "前端界面设计与视觉质量的统一工作流（自建：规则 + 配方 + 确定性检查器）：新建或改造网页、落地页、官网、产品界面、仪表盘、组件、表单、空态、设计系统与 token。包含抗 AI 味红线（Floor）、排版/色彩/间距/动效手艺规则、Tailwind v4 CSS-first token 方案、8 套视觉配方、检查器 forge.mjs（静态 + 可选八宽度渲染）。中文触发：做页面、做官网、做落地页、写 UI、调样式、配色、排版、动效、空态、设计系统、审查界面。不用于纯图片提示词生成或后端任务。"
-version: 0.3.0
+description: "前端界面设计与视觉质量工作流（自建）：做/改网页、落地页、官网、产品页、仪表盘、UI 组件、表单、空态、设计系统与 token、配色排版动效、审查界面。含 31 条确定性规则（Floor 红线）、Tailwind v4 CSS-first token 方案、8 套 OKLCH 配方、检查器 forge.mjs（静态 + 可选八宽度渲染）。不用于纯图片提示词或后端任务。"
+version: 0.4.0
 license: MIT
 metadata:
-  forge/version: "0.3.0"
+  forge/version: "0.4.0"
 ---
 
 # design-forge
+
+**脚本目录解析**：不同 harness 把 skill 装在不同位置。先取本 `SKILL.md` 所在目录；取不到就按顺序试 `~/.agents/skills/design-forge`、`~/.zcode/skills/design-forge`、`~/.claude/skills/design-forge`、`.opencode/skills/design-forge`。下文 `<skill-dir>` 就是解析出来的那个目录。
 
 一个自建的 UI 设计工作流：**判断层（Floor）→ 手艺层（craft）→ 工程层（Tailwind v4）→ 工具层（forge.mjs / tokens.mjs）**。
 目标是让生成出来的界面像人做的：有一处值得记住的东西，没有模板痕迹，并且能被机器查出问题。

@@ -1,10 +1,12 @@
 ---
-description: design-forge · 查看/生成视觉配方 token（不发散、不改页面）
+description: design-forge · 查看/生成视觉配方 token（只出 token，不动页面）
+argument-hint: "[配方 slug]"
+skills: design-forge
 ---
-Load the `design-forge` skill, then run its **tokens** path — read `~/.agents/skills/design-forge/references/recipes.md`.
+Use the `design-forge` skill (load it first), then run its **tokens** path — read `<skill-dir>/references/recipes.md`.
 
 Request: $ARGUMENTS
-If $ARGUMENTS is empty, list the 8 recipes (`node ~/.agents/skills/design-forge/scripts/tokens.mjs recipes`) and ask which one, or deal three candidates by genre.
+If the argument is empty, list the 8 recipes (`node <skill-dir>/scripts/tokens.mjs recipes`) and ask which one, or deal three candidates by genre.
 
 Rules for this run:
 - Only produce tokens: `tokens.mjs show <slug>` for inspection, `tokens.mjs emit <slug> [--tailwind] --out <path>` for files.

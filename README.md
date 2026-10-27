@@ -2,7 +2,7 @@
 
 自建的 UI 设计与前端视觉质量工作流。一个 skill、一套检查器、一套配方，替代 `hallmark`、`impeccable`、`tailwind-design-system` 三家的叠加。
 
-**规则手册（在线）**：https://aifeifei798.github.io/design-forge/ · **变更记录**：[CHANGELOG.md](CHANGELOG.md) · **自己加规则/配方**：[EXTENDING.md](EXTENDING.md) · **参与维护**：[CONTRIBUTING.md](CONTRIBUTING.md)
+**规则手册（在线）**：https://aifeifei798.github.io/design-forge/ · **变更记录**：[CHANGELOG.md](CHANGELOG.md) · **各 harness 安装**：[HARNESSES.md](HARNESSES.md) · **自己加规则/配方**：[EXTENDING.md](EXTENDING.md) · **参与维护**：[CONTRIBUTING.md](CONTRIBUTING.md)
 
 - **无二进制、无遥测、无运行时下载**，只用 Node 标准库
 - **静态检查永远先跑**，渲染档可选（复用全局 `puppeteer-core` + Chrome）
@@ -46,14 +46,14 @@ docs/                        生成的规则手册（GitHub Pages）
 git clone https://github.com/aifeifei798/design-forge.git
 cd design-forge
 
-# 全局 skill（符号链接，改仓库即生效）
-ln -sfn "$PWD/skill" ~/.agents/skills/design-forge
-mkdir -p ~/.config/opencode/commands
-ln -sfn "$PWD"/commands/*.md ~/.config/opencode/commands/
+node tools/link.mjs opencode   # 或 zcode / claude / codex / all
 ```
 
+`tools/link.mjs` 只建符号链接（改仓库即生效），已存在的真实文件不覆盖；加 `--dry-run` 先看会动哪些路径。
+
 - OpenCode 的搜索路径包含 `~/.agents/skills/`、`~/.config/opencode/skills/`、`~/.claude/skills/`、项目内 `.opencode/skills/`；放哪个都行，符号链接是为了改仓库即生效。
-- `/forge` 命令需要**新会话**才出现在命令列表；skill 本身在下次会话被扫描到（也可以在会话内直接说"用 design-forge"）。
+- ZCode 用 `~/.zcode/skills/` + `~/.zcode/commands/`，还要在 `~/.zcode/AGENTS.md` 加一段路由——见 [HARNESSES.md](HARNESSES.md)。
+- 命令需要**新会话**才出现在 `/` 列表；skill 本身在下次会话被扫描到（也可以在会话内直接说"用 design-forge"）。
 - 不想用符号链接就整目录复制，代价是每次更新要重拷。
 
 ## 用法
