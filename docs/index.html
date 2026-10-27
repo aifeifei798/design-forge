@@ -11,11 +11,12 @@
 
 <header class="site">
   <div class="wrap">
-    <span class="brand">design-forge v0.2.0</span>
+    <span class="brand">design-forge v0.3.0</span>
     <nav aria-label="页面导航">
       <a href="#rules">规则</a>
       <a href="#recipes">配方</a>
       <a href="#use">用法</a>
+      <a href="#extend">扩展</a>
       <a href="https://github.com/aifeifei798/design-forge">GitHub</a>
     </nav>
   </div>
@@ -321,6 +322,18 @@ node skill/scripts/tokens.mjs emit harbor --tailwind --out src/forge-tokens.css
 node skill/scripts/forge.mjs src/            # 静态检查
 node skill/scripts/forge.mjs src/ --render   # 八宽度渲染（需 Chrome + puppeteer-core）</code></pre>
       <p class="lede">会话里说「做个落地页」会自动加载；也可以 <code>/forge</code>、<code>/forge-audit</code>、<code>/forge-tokens</code> 直接进对应流程。</p>
+    </div>
+  <section id="extend">
+    <div class="wrap">
+      <h2>扩展</h2>
+      <p class="lede">规则是表里的一行 + 一段扫描；配方是 JSON 里的一条数据。两个都不需要动框架。</p>
+      <pre><code>// 加一条规则：skill/scripts/forge.mjs 顶部的 RULES 表
+"type/line-height": ["REFLEX", "正文行高不在 1.5–1.65", "用 --leading-body token"],
+
+// 加一套配方：skill/data/recipes.json
+{ "slug": "kiln", "name": "Kiln", "genre": "editorial",
+  "paper": { "l": 95, "c": 0.015, "h": 60 }, ... }</code></pre>
+      <p class="lede">加规则必须同时在 <code>fixtures/bad.html</code> 放一个触发点，并把 <code>npm test</code> 的期望数字改对；加配方要能 <code>emit</code> 出 token。完整步骤见 <a href="https://github.com/aifeifei798/design-forge/blob/main/EXTENDING.md">EXTENDING.md</a>。</p>
     </div>
   </section>
 </main>

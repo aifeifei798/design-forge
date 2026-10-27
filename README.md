@@ -2,7 +2,7 @@
 
 自建的 UI 设计与前端视觉质量工作流。一个 skill、一套检查器、一套配方，替代 `hallmark`、`impeccable`、`tailwind-design-system` 三家的叠加。
 
-**规则手册（在线）**：https://aifeifei798.github.io/design-forge/ · **变更记录**：[CHANGELOG.md](CHANGELOG.md)
+**规则手册（在线）**：https://aifeifei798.github.io/design-forge/ · **变更记录**：[CHANGELOG.md](CHANGELOG.md) · **自己加规则/配方**：[EXTENDING.md](EXTENDING.md) · **参与维护**：[CONTRIBUTING.md](CONTRIBUTING.md)
 
 - **无二进制、无遥测、无运行时下载**，只用 Node 标准库
 - **静态检查永远先跑**，渲染档可选（复用全局 `puppeteer-core` + Chrome）
