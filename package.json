@@ -1,0 +1,15 @@
+{
+  "name": "design-forge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "自建 UI 设计与视觉质量工作流：规则 + 配方 + 确定性检查器",
+  "license": "MIT",
+  "scripts": {
+    "rules": "node skill/scripts/forge.mjs --list-rules",
+    "recipes": "node skill/scripts/tokens.mjs recipes",
+    "test:bad": "node skill/scripts/forge.mjs fixtures/bad.html; test $? -eq 2",
+    "test:good": "node skill/scripts/forge.mjs fixtures/good.html",
+    "test": "npm run -s test:bad && npm run -s test:good && echo 'fixtures ok'"
+  }
+}

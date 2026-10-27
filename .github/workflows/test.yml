@@ -1,0 +1,31 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: rule catalog
+        run: node skill/scripts/forge.mjs --list-rules
+
+      - name: bad fixture must fail with exit 2
+        run: |
+          set +e
+          node skill/scripts/forge.mjs fixtures/bad.html
+          code=$?
+          echo "exit=$code"
+          test "$code" -eq 2
+
+      - name: good fixture must be clean
+        run: node skill/scripts/forge.mjs fixtures/good.html
+
+      - name: tokens emit
+        run: node skill/scripts/tokens.mjs emit harbor --tailwind --out /tmp/forge-tokens.css

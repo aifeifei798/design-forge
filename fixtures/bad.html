@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+<style>
+  body { background: #ffffff; color: #1a1a1a; }
+  .hero { height: 100vh; width: 100vw; overflow-x: hidden; background: linear-gradient(135deg, #7c3aed, #2563eb); }
+  .card { background: #fff; transition: all .3s ease; box-shadow: 4px 4px 0 #000; border-left: 4px solid #7c3aed; }
+  .card .inner-card { background: #f7f7f7; border: 1px solid #ddd; }
+  .label { text-transform: uppercase; letter-spacing: 0.18em; font-size: 11px; }
+  .btn { outline: none; padding: 6px 10px; font: 10px Inter; }
+  @keyframes float { from { opacity: 0 } to { opacity: 1 } }
+  .floaty { animation: float .4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+  .wide { max-width: 92ch; }
+  .layer { z-index: 9999; }
+</style>
+</head>
+<body>
+  <div class="hero">
+    <p class="label uppercase tracking-widest text-xs">Introducing</p>
+    <h1 class="bg-gradient-to-r from-violet-500 to-blue-500 bg-clip-text text-transparent">Ship faster 🚀</h1>
+    <h3>Why teams choose us</h3>
+    <img src="hero.png">
+    <div class="card">
+      <div class="inner-card">
+        <span class="text-[10px]">fine print</span>
+      </div>
+    </div>
+    <input type="email" placeholder="you@example.com">
+    <button class="btn">Go</button>
+  </div>
+</body>
+</html>

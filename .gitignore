@@ -1,0 +1,15 @@
+# 依赖与缓存
+node_modules/
+.forge/
+*.log
+
+# 编辑器 / 系统
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# 检查器产物
+shots/
+before/
+after.json

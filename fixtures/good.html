@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  :root {
+    --paper: oklch(99% 0.003 250);
+    --ink: oklch(25% 0.02 250);
+    --muted: oklch(52% 0.02 250);
+    --accent: oklch(55% 0.15 255);
+    --border: oklch(92% 0.005 250);
+    --radius-md: 8px;
+    --ease-forge: cubic-bezier(0.3, 0, 0.2, 1);
+    --duration-forge: 150ms;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  .hero { padding: 96px 0 64px; }
+  .hero h1 { font-family: var(--font-display); font-size: clamp(40px, 5vw, 64px); line-height: 1.05; margin: 0 0 16px; overflow-wrap: break-word; min-width: 0; }
+  .hero p { max-width: 66ch; color: var(--muted); margin: 0 0 24px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 0 20px; border: 1px solid var(--border);
+    border-radius: var(--radius-md); background: var(--accent); color: var(--paper);
+    font: inherit; cursor: pointer;
+    transition: transform var(--duration-forge) var(--ease-forge), background-color var(--duration-forge) var(--ease-forge);
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 24px; padding: 32px 0 96px; }
+  .grid > section { min-width: 0; }
+  .grid h2 { font-size: 20px; margin: 0 0 8px; }
+  .grid p { margin: 0; color: var(--muted); }
+  input[type="email"] {
+    min-height: 44px; padding: 0 12px; border: 1px solid var(--border);
+    border-radius: var(--radius-md); font: inherit; background: var(--paper); color: var(--ink);
+  }
+  input[type="email"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="hero">
+      <h1>把订单从表格里解放出来</h1>
+      <p>导入 CSV，两分钟跑起来。真实数字、真实账单，没有花活。</p>
+      <a class="btn" href="#start">开始导入</a>
+    </header>
+    <div class="grid">
+      <section>
+        <h2>两分钟设置</h2>
+        <p>不用装客户端，浏览器里完成。</p>
+      </section>
+      <section>
+        <h2>账单自动对账</h2>
+        <p>每笔付款自动匹配到订单。</p>
+      </section>
+    </div>
+    <form>
+      <label for="email">邮箱</label>
+      <input id="email" type="email" name="email" autocomplete="email">
+      <button class="btn" type="submit">订阅</button>
+    </form>
+    <img src="dashboard.png" alt="对账面板，左侧订单列表，右侧应付金额">
+  </main>
+</body>
+</html>
