@@ -1,6 +1,6 @@
 {
   "name": "design-forge",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "description": "自建 UI 设计与视觉质量工作流：规则 + 配方 + 确定性检查器",
@@ -12,7 +12,9 @@
     "docs:check": "node skill/scripts/forge.mjs docs/",
     "test:bad": "node tools/expect.mjs fixtures/bad.html 18",
     "test:good": "node tools/expect.mjs fixtures/good.html 0",
-    "test": "npm run -s test:bad && npm run -s test:good && npm run -s docs && npm run -s docs:check && echo 'fixtures + docs ok'",
+    "manifest": "node skill/scripts/forge.mjs --manifest",
+    "test:manifest": "node tools/check-manifest.mjs",
+    "test": "npm run -s test:bad && npm run -s test:good && npm run -s test:manifest && npm run -s docs && npm run -s docs:check && echo 'fixtures + manifest + docs ok'",
     "link": "node tools/link.mjs"
   }
 }

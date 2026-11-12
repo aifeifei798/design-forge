@@ -2,13 +2,28 @@
 // design-forge · forge.mjs
 // 确定性 UI 检查器。无依赖、无网络、无遥测。静态档永远先跑；--render 需要 puppeteer-core + Chrome。
 //
-//   node forge.mjs <file-or-dir...> [--json] [--render] [--shots]
-//                  [--recipe <slug>] [--waive id,id] [--list-rules] [--no-fail]
+//   node forge.mjs <file-or-dir...> [--json] [--detail brief|compact|full] [--render] [--shots]
+//                  [--recipe <slug>] [--waive id,id] [--no-fail]
+//   node forge.mjs --list-rules [--json] [--detail brief|compact|full]
+//   node forge.mjs --manifest [--json]
 //
-// 退出码：0 无 FAIL；2 有 FAIL；1 运行失败。
+// 退出码：0 无 FAIL；2 有 FAIL；1 用法 / 运行失败（--json 时带稳定错误码，见 --manifest）。
 
 import { readFileSync, readdirSync, statSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const API_VERSION = 1;
+const HERE = dirname(fileURLToPath(import.meta.url));
+const PKG = (() => {
+  try { return JSON.parse(readFileSync(join(HERE, "..", "..", "package.json"), "utf8")); }
+  catch { return { version: "0.0.0" }; }
+})();
+const RECIPES_FILE = join(HERE, "..", "data", "recipes.json");
+const recipeSlugs = () => {
+  try { return JSON.parse(readFileSync(RECIPES_FILE, "utf8")).recipes.map((r) => r.slug); }
+  catch { return []; }
+};
 
 /* ------------------------------------------------------------------ 规则表 */
 
@@ -47,44 +62,194 @@ const RULES = {
 };
 
 const TIER_ORDER = { FAIL: 0, REFLEX: 1, WARN: 2 };
+const TIERS = {
+  FAIL: "不可豁免，必须修",
+  REFLEX: "修，或写明理由后豁免",
+  WARN: "只提示不阻塞",
+};
+
+/* ---------------------------------------------------------------- 参数表 */
+// manifest 从这里生成，所以能力清单和真实解析器不会分叉。
+
+const FLAGS = [
+  { name: "json", flag: "--json", type: "boolean", description: "输出 JSON 信封（apiVersion 1，含 summary / findings / waived / render / meta）" },
+  { name: "detail", flag: "--detail", arg: "<level>", type: "enum", choices: ["brief", "compact", "full"], description: "人读输出的详细程度；--json 始终完整。默认 check=compact，--list-rules=full" },
+  { name: "render", flag: "--render", type: "boolean", description: "八宽度渲染档（需 puppeteer-core + Chrome；启动前先征得同意）" },
+  { name: "shots", flag: "--shots", type: "boolean", implies: "render", description: "渲染档顺带截图到 .forge/shots/（等同 --render + 截图）" },
+  { name: "recipe", flag: "--recipe", arg: "<slug>", type: "string", choicesFrom: "recipes", description: "按配方调整豁免（如 quarry 允许硬阴影）；未知 slug 直接报错" },
+  { name: "waive", flag: "--waive", arg: "id,id", type: "string", description: "豁免规则 id；交付里必须列出被豁免的条目" },
+  { name: "noFail", flag: "--no-fail", type: "boolean", description: "有 FAIL 也退出 0（只用于必须继续跑后续步骤的场合）" },
+  { name: "listRules", flag: "--list-rules", type: "boolean", description: "列出全部规则 id / 档位 / 改法，不需要目标" },
+  { name: "manifest", flag: "--manifest", type: "boolean", description: "打印能力清单（参数、模式、退出码、错误码、输出形状、规则与配方），不需要目标" },
+];
+
+const ERROR_CODES = {
+  ERR_NO_TARGET: "没有给出文件或目录参数",
+  ERR_UNKNOWN_FLAG: "未知参数",
+  ERR_MISSING_ARGUMENT: "参数缺值",
+  ERR_INVALID_OPTION: "参数值不在可选范围",
+  ERR_UNKNOWN_RECIPE: "配方 slug 不存在",
+  ERR_TARGET_NOT_FOUND: "目标路径不存在",
+  ERR_NO_FILES: "目标里没有可检查的文件",
+};
 
 /* ---------------------------------------------------------------- 参数解析 */
 
-const argv = process.argv.slice(2);
-const targets = [];
-let json = false, render = false, shots = false, noFail = false, listRules = false;
-let recipeSlug = null, waives = new Set();
+const argvAll = process.argv.slice(2);
+const wantsJson = argvAll.includes("--json");
 
-for (let i = 0; i < argv.length; i++) {
-  const a = argv[i];
-  if (a === "--json") json = true;
-  else if (a === "--render") render = true;
-  else if (a === "--shots") { render = true; shots = true; }
-  else if (a === "--no-fail") noFail = true;
-  else if (a === "--list-rules") listRules = true;
-  else if (a === "--recipe") recipeSlug = argv[++i];
-  else if (a === "--waive") String(argv[++i] || "").split(",").filter(Boolean).forEach((x) => waives.add(x.trim()));
-  else if (a.startsWith("--")) { console.error(`forge: unknown flag ${a}`); process.exit(1); }
-  else targets.push(a);
+function closest(value, choices) {
+  const v = String(value).replace(/^--/, "").toLowerCase();
+  const near = choices.filter((c) => {
+    const d = String(c).replace(/^--/, "").toLowerCase();
+    return d.startsWith(v.slice(0, 2)) || v.startsWith(d.slice(0, 2));
+  });
+  return (near.length ? near : choices).slice(0, 4);
 }
 
-if (listRules) {
-  if (json) {
+function fail(code, message, suggestions = []) {
+  if (wantsJson) {
     console.log(JSON.stringify({
-      count: Object.keys(RULES).length,
-      rules: Object.entries(RULES).map(([id, [tier, title, fix]]) => ({ id, tier, title, fix })),
+      apiVersion: API_VERSION,
+      type: "error",
+      error: message,
+      code,
+      ...(suggestions.length ? { suggestions } : {}),
     }, null, 2));
   } else {
-    for (const [id, [tier, title, fix]] of Object.entries(RULES)) {
-      console.log(`${tier.padEnd(6)} ${id.padEnd(26)} ${title}\n       fix: ${fix}`);
-    }
+    console.error(`forge: ${message}`);
+    if (suggestions.length) console.error(`  是不是想写：${suggestions.join(" / ")}`);
+    console.error(`  code: ${code}`);
   }
-  process.exit(0);
+  process.exit(1);
 }
 
+const FLAG_BY = new Map(FLAGS.map((f) => [f.flag, f]));
+const opt = Object.create(null);
+const targets = [];
+
+for (let i = 0; i < argvAll.length; i++) {
+  const a = argvAll[i];
+  if (!a.startsWith("--")) { targets.push(a); continue; }
+  const spec = FLAG_BY.get(a);
+  if (!spec) fail("ERR_UNKNOWN_FLAG", `unknown flag ${a}`, closest(a, [...FLAG_BY.keys()]));
+  if (spec.type === "boolean") { opt[spec.name] = true; continue; }
+  const v = argvAll[++i];
+  if (v == null || v.startsWith("--")) fail("ERR_MISSING_ARGUMENT", `${a} 需要一个值 ${spec.arg ?? ""}`.trim());
+  if (spec.choices && !spec.choices.includes(v)) fail("ERR_INVALID_OPTION", `${a} 不接受 "${v}"`, closest(v, spec.choices));
+  if (spec.choicesFrom === "recipes" && !recipeSlugs().includes(v)) fail("ERR_UNKNOWN_RECIPE", `unknown recipe "${v}"`, closest(v, recipeSlugs()));
+  opt[spec.name] = v;
+}
+if (opt.shots) opt.render = true;
+
+const json = wantsJson;
+const render = !!opt.render;
+const shots = !!opt.shots;
+const noFail = !!opt.noFail;
+const listRules = !!opt.listRules;
+const showManifest = !!opt.manifest;
+const recipeSlug = opt.recipe ?? null;
+const waives = new Set(String(opt.waive ?? "").split(",").filter(Boolean).map((x) => x.trim()));
+const detail = opt.detail ?? (listRules || showManifest ? "full" : "compact");
+
+/* ------------------------------------------------------------------ 清单 */
+
+function rulesAsData() {
+  return Object.entries(RULES).map(([id, [tier, title, fix]]) => ({ id, tier, title, fix }));
+}
+
+function manifestData() {
+  const rules = rulesAsData();
+  const slugs = recipeSlugs();
+  const counts = { FAIL: 0, REFLEX: 0, WARN: 0 };
+  for (const r of rules) counts[r.tier]++;
+  return {
+    name: "forge",
+    version: PKG.version,
+    description: `design-forge 确定性 UI 检查器：${rules.length} 条规则（${counts.FAIL} FAIL / ${counts.REFLEX} REFLEX / ${counts.WARN} WARN），静态档永远先跑，渲染档可选。`,
+    usage: "node forge.mjs <file-or-dir...> [--json] [--detail brief|compact|full] [--render] [--shots] [--recipe <slug>] [--waive id,id] [--no-fail]",
+    modes: [
+      { name: "check", needsTarget: true, responseType: "check.report", defaultDetail: "compact", exitCodes: [0, 2, 1] },
+      { name: "rules", flag: "--list-rules", needsTarget: false, responseType: "rules.list", defaultDetail: "full", exitCodes: [0] },
+      { name: "manifest", flag: "--manifest", needsTarget: false, responseType: "manifest", exitCodes: [0] },
+    ],
+    options: FLAGS.map((f) => ({
+      flag: f.flag,
+      type: f.type,
+      ...(f.arg ? { value: f.arg } : {}),
+      ...(f.choices ? { choices: f.choices } : {}),
+      ...(f.choicesFrom === "recipes" ? { choices: slugs } : {}),
+      ...(f.implies ? { implies: `--${f.implies}` } : {}),
+      description: f.description,
+    })),
+    exitCodes: [
+      { code: 0, when: "没有 FAIL（--no-fail 时始终 0）" },
+      { code: 2, when: "有 FAIL" },
+      { code: 1, when: "用法或运行错误；--json 时输出 type=error + 稳定 code" },
+    ],
+    errorCodes: ERROR_CODES,
+    responseTypes: {
+      "check.report": { summary: "{ files, fail, reflex, warn, waived }", findings: "[{ file, id, tier, line, message, fix }]，按 FAIL→REFLEX→WARN 排序", waived: "被 --waive 命中的同形状条目", render: "渲染档结果或 null", meta: "{ version, node, detail, recipe, render, waivedBy }" },
+      "rules.list": { count: "规则总数", rules: "[{ id, tier, title, fix }]" },
+      manifest: { "…": "本对象" },
+      error: { error: "人读消息", code: "稳定错误码，只增不改", suggestions: "可选，最接近的选项" },
+    },
+    tiers: TIERS,
+    rules: rulesAsData(),
+    recipes: slugs,
+    related: [{ script: "tokens.mjs", usage: "node tokens.mjs <recipes|deal|show|emit> …", note: "配方发牌与 token 生成；forge 只读 slug 做 --recipe 校验" }],
+  };
+}
+
+function printRules() {
+  const rules = rulesAsData();
+  if (json) {
+    console.log(JSON.stringify({
+      apiVersion: API_VERSION,
+      type: "rules.list",
+      count: rules.length,
+      rules,
+      meta: { version: PKG.version, detail },
+    }, null, 2));
+    return;
+  }
+  for (const r of rules) {
+    if (detail === "brief") { console.log(`${r.tier.padEnd(6)} ${r.id}`); continue; }
+    console.log(`${r.tier.padEnd(6)} ${r.id.padEnd(26)} ${r.title}`);
+    if (detail === "full") console.log(`       fix: ${r.fix}`);
+  }
+}
+
+function printManifest() {
+  const data = manifestData();
+  if (json) {
+    console.log(JSON.stringify({ apiVersion: API_VERSION, type: "manifest", data, meta: { version: PKG.version, node: process.version } }, null, 2));
+    return;
+  }
+  const counts = { FAIL: 0, REFLEX: 0, WARN: 0 };
+  for (const r of data.rules) counts[r.tier]++;
+  console.log(`design-forge forge v${data.version} · apiVersion ${API_VERSION}\n`);
+  console.log(`usage: ${data.usage}\n`);
+  console.log("modes");
+  for (const m of data.modes) console.log(`  ${m.name.padEnd(10)} ${m.needsTarget ? "需要目标" : "不需要目标"} · ${m.responseType}${m.defaultDetail ? ` · detail=${m.defaultDetail}` : ""}`);
+  console.log("\noptions");
+  for (const o of data.options) {
+    const value = o.choices ? o.choices.join("|") : (o.value ?? "");
+    console.log(value ? `  ${o.flag.padEnd(22)} ${o.type.padEnd(8)} ${value}` : `  ${o.flag.padEnd(22)} ${o.type}`);
+    if (detail === "full") console.log(`  ${" ".repeat(22)} ${o.description}`);
+  }
+  console.log("\nexit codes");
+  for (const e of data.exitCodes) console.log(`  ${String(e.code).padEnd(3)} ${e.when}`);
+  console.log(`\nerror codes  ${Object.keys(data.errorCodes).join(" · ")}`);
+  console.log(`rules        ${data.rules.length}（${counts.FAIL} FAIL / ${counts.REFLEX} REFLEX / ${counts.WARN} WARN）`);
+  console.log(`recipes      ${data.recipes.length}：${data.recipes.join(" ")}`);
+}
+
+if (showManifest) { printManifest(); process.exit(0); }
+if (listRules) { printRules(); process.exit(0); }
+
 if (targets.length === 0) {
-  console.error("usage: node forge.mjs <file-or-dir...> [--json] [--render] [--shots] [--recipe <slug>] [--waive id,id]");
-  process.exit(1);
+  fail("ERR_NO_TARGET", "usage: node forge.mjs <file-or-dir...> [--json] [--detail brief|compact|full] [--render] [--shots] [--recipe <slug>] [--waive id,id] [--no-fail]");
 }
 
 /* -------------------------------------------------------------- 文件收集 */
@@ -109,11 +274,13 @@ function collect(path, acc) {
 }
 
 const files = [];
-for (const t of targets) collect(resolve(t), files);
+for (const t of targets) {
+  try { statSync(resolve(t)); } catch { fail("ERR_TARGET_NOT_FOUND", `路径不存在：${t}`); }
+  collect(resolve(t), files);
+}
 
 if (files.length === 0) {
-  console.error("forge: no .html .css .jsx .tsx .vue .svelte .astro files found");
-  process.exit(1);
+  fail("ERR_NO_FILES", "no .html .css .jsx .tsx .vue .svelte .astro files found");
 }
 
 /* ------------------------------------------------------------------ 工具 */
@@ -378,11 +545,11 @@ for (const file of files) {
   if (important > 3) add(file, "craft/important", code.search(/!important/), `${important}× !important`);
   const zRe = /z-index\s*:\s*(\d{4,})/g;
   while ((m = zRe.exec(code))) add(file, "craft/z-index", m.index, m[0]);
+}
 
-  /* 配方豁免：quarry 允许硬阴影 */
-  if (recipeSlug === "quarry") {
-    for (const f of findings) if (f.id === "slop/hard-shadow") f.tier = "WARN";
-  }
+/* 配方豁免：只跑一次，quarry 允许硬阴影 */
+if (recipeSlug === "quarry") {
+  for (const f of findings) if (f.id === "slop/hard-shadow") f.tier = "WARN";
 }
 
 /* ------------------------------------------------------------ 渲染档（可选） */
@@ -405,7 +572,7 @@ async function runRender() {
     return null;
   };
   let puppeteer = null;
-  const localRoots = [process.cwd(), dirname(new URL(import.meta.url).pathname)];
+  const localRoots = [process.cwd(), HERE];
   if (process.env.HALLMARK_PUPPETEER) localRoots.unshift(process.env.HALLMARK_PUPPETEER);
   if (process.env.FORGE_PUPPETEER) localRoots.unshift(process.env.FORGE_PUPPETEER);
   puppeteer = await tryRoots(localRoots);
@@ -517,20 +684,50 @@ const summary = {
 };
 
 if (json) {
-  console.log(JSON.stringify({ summary, findings: active, waived, render: renderReport }, null, 2));
+  console.log(JSON.stringify({
+    apiVersion: API_VERSION,
+    type: "check.report",
+    summary,
+    findings: active,
+    waived,
+    render: renderReport,
+    meta: {
+      version: PKG.version,
+      node: process.version,
+      detail,
+      recipe: recipeSlug,
+      render,
+      waivedBy: [...waives],
+    },
+  }, null, 2));
 } else {
-  let current = null;
-  for (const f of active) {
-    if (f.file !== current) { current = f.file; console.log(`\n${f.file}`); }
-    const where = f.line ? `:${f.line}` : "—";
-    console.log(`  ${f.tier.padEnd(6)} ${f.id.padEnd(27)} ${where.padEnd(8)} ${f.message}`);
+  const printRender = () => {
+    if (renderReport?.pages) {
+      console.log(`\nrender: ${renderReport.pages.map((p) => `${basename(p.file)} ${Object.entries(p.widths).map(([w, o]) => w + (o > 1 ? "✗" : "✓")).join(" ")}`).join("\n        ")}`);
+    } else if (renderReport?.skipped) {
+      console.log(`\nrender: skipped — ${renderReport.skipped}`);
+    }
+  };
+
+  if (detail === "brief") {
+    for (const tier of ["FAIL", "REFLEX", "WARN"]) {
+      const hits = active.filter((f) => f.tier === tier);
+      if (!hits.length) continue;
+      const ids = [...new Set(hits.map((f) => f.id))];
+      console.log(`${tier.padEnd(6)} ${ids.join(" ")}`);
+    }
+    if (waived.length) console.log(`${"WAIVED".padEnd(6)} ${[...new Set(waived.map((w) => w.id))].join(" ")}`);
+  } else {
+    let current = null;
+    for (const f of active) {
+      if (f.file !== current) { current = f.file; console.log(`\n${f.file}`); }
+      const where = f.line ? `:${f.line}` : "—";
+      console.log(`  ${f.tier.padEnd(6)} ${f.id.padEnd(27)} ${where.padEnd(8)} ${f.message}`);
+      if (detail === "full") console.log(`  ${" ".repeat(6)} ${"→ fix".padEnd(27)} ${" ".repeat(8)} ${f.fix}`);
+    }
+    if (waived.length) console.log(`\nwaived: ${[...new Set(waived.map((w) => w.id))].join(", ")}`);
   }
-  if (waived.length) console.log(`\nwaived: ${waived.map((w) => w.id).join(", ")}`);
-  if (renderReport?.pages) {
-    console.log(`\nrender: ${renderReport.pages.map((p) => `${basename(p.file)} ${Object.entries(p.widths).map(([w, o]) => w + (o > 1 ? "✗" : "✓")).join(" ")}`).join("\n        ")}`);
-  } else if (renderReport?.skipped) {
-    console.log(`\nrender: skipped — ${renderReport.skipped}`);
-  }
+  printRender();
   console.log(`\n${summary.fail} FAIL · ${summary.reflex} REFLEX · ${summary.warn} WARN · ${summary.waived} waived · ${summary.files} file(s)`);
 }
 

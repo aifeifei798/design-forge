@@ -26,10 +26,12 @@ while ((m = lineHeight.exec(code))) {
 2. **把期望的数量写进 `package.json`**：`test:bad` 里的 `18` 改成新的总数。
 3. 在 `skill/references/floor.md` 的对应档位表里补一行（id / 问题 / 为什么）。
 
+规则表和 `--manifest` 是同一份数据，所以 manifest / `--list-rules` 不用手改；`tools/check-manifest.mjs` 会断言新 FAIL 规则确实出现在 floor.md，漏写第 3 条会直接红。
+
 跑：
 
 ```bash
-npm test                              # 期望正好命中你写的新数字
+npm test                              # 期望正好命中你写的新数字 + manifest 契约全过
 node skill/scripts/forge.mjs --list-rules | tail -3
 ```
 
@@ -97,10 +99,18 @@ ln -sfn "$PWD"/commands/*.md ~/.config/opencode/commands/
 - 把这次运行的硬约束写清楚（只读？不跑浏览器？不许改哪些文件？）。
 - 命令只做转发和约束，不复制规则正文——否则两份规则一定会分叉。
 
-## 5. 验证清单（提交前）
+## 5. 加参数 / 取消错误
+
+**改哪里**：`skill/scripts/forge.mjs` 顶部的 `FLAGS` 与 `ERROR_CODES` 两张表。
+
+- 加参数：往 `FLAGS` 加一条（`flag` / `type` / `arg` / `choices` / `description`），解析循环自动支持，`--manifest` 自动收录；再把值接到 `opt.<name>`。**不要**回到手写 `if (a === "--x")`，否则 manifest 和解析器会分叉。
+- 加错误码：往 `ERROR_CODES` 加一条，在触发点 `fail("ERR_…", "中文说明", suggestions)`；同时在 `tools/check-manifest.mjs` 的 `reachable` 表里加一行真实可触发的用法。
+- 错误码**只增不改**：已经发布的码不改名、不改含义（agent 的脚本会按码分支）。
+
+## 6. 验证清单（提交前）
 
 ```bash
-npm test                       # bad 精确命中 / good 为 0 / docs 为 0
+npm test                       # bad 精确命中 / good 为 0 / manifest 契约全过 / docs 为 0
 node tools/build-docs.mjs      # 文档重新生成（改了规则或配方必须跑）
 git status                     # docs/ 的变动要一起提交
 ```

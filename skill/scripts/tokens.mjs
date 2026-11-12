@@ -24,7 +24,7 @@ const flag = (name, fallback) => {
   return v && !v.startsWith("--") ? v : true;
 };
 const has = (name) => argv.includes(`--${name}`);
-const die = (msg) => { console.error(`tokens: ${msg}`); process.exit(2); };
+const die = (msg) => { console.error(`tokens: ${msg}`); process.exit(1); };
 
 const oklch = ({ l, c, h }) => `oklch(${l}% ${c} ${h})`;
 

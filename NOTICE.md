@@ -23,6 +23,12 @@ design-forge 是原创实现：`skill/scripts/forge.mjs`（检查器）、`skill
 - 借鉴：Tailwind CSS v4 CSS-first 的写法约定——`@theme` 定义语义 token、`@custom-variant` 做暗色、`cva` 做组件变体、`@container` 做组件级自适应，以及 v3 → v4 的迁移对照表。
 - 未使用：其 `details.md` / `advanced-patterns.md` 正文、示例组件代码。
 
+### Astryx — MIT — Meta
+
+- https://github.com/meta/astryx
+- 借鉴：把 CLI 当作「人和 agent 的同一个接口」——`--manifest` 自描述能力清单、带 `apiVersion` 的类型化 JSON 信封、`ERR_*` 稳定错误码只增不改、`--detail brief|compact|full` 分档输出、用契约测试锁住「声明过的能力必须真实可用」。只借鉴接口形态，本项目没有引入 React / StyleX / 组件库，也不依赖其任何代码。
+- 未使用：150+ 组件实现、7 套主题文件、swizzle 机制、`astryx host` 与远端能力。
+
 ### Tailwind CSS — MIT — Tailwind Labs
 
 - https://tailwindcss.com

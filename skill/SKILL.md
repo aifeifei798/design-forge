@@ -1,10 +1,10 @@
 ---
 name: design-forge
 description: "前端界面设计与视觉质量工作流（自建）：做/改网页、落地页、官网、产品页、仪表盘、UI 组件、表单、空态、设计系统与 token、配色排版动效、审查界面。含 31 条确定性规则（Floor 红线）、Tailwind v4 CSS-first token 方案、8 套 OKLCH 配方、检查器 forge.mjs（静态 + 可选八宽度渲染）。不用于纯图片提示词或后端任务。"
-version: 0.4.0
+version: 0.5.0
 license: MIT
 metadata:
-  forge/version: "0.4.0"
+  forge/version: "0.5.0"
 ---
 
 # design-forge
@@ -91,9 +91,12 @@ node <skill-dir>/scripts/tokens.mjs emit <slug> --tailwind --out <项目样式�
 ```bash
 node <skill-dir>/scripts/forge.mjs <文件或目录>              # 静态：永远先跑这个
 node <skill-dir>/scripts/forge.mjs <文件或目录> --render      # 八宽度渲染（需 puppeteer-core + Chrome，先征得同意）
+node <skill-dir>/scripts/forge.mjs --manifest                 # 能力清单：参数、模式、退出码、错误码、输出形状
 ```
 
 - FAIL 清零；REFLEX 逐条修或豁免（豁免用 `--waive id` 并在交付里列出来）；WARN 至少看一眼。
+- 输出三档：`--detail brief`（按档去重的 id 一行）、`compact`（默认，带文件:行号）、`full`（每条附改法）。`--json` 始终完整。
+- `--json` 是带版本的信封：`{ apiVersion: 1, type: "check.report", summary, findings, waived, render, meta }`；用法错误时 `type: "error"` + 稳定 `code`（`ERR_*`，只增不改，非 0 退出）。
 - 渲染档只在需要验证横向溢出 / 控制台报错 / 真实断点时用；`--shots` 会落盘截图到 `.forge/shots/`，按本机截图政策先问。
 - 交付前跑 `--json`，把 summary 原样贴进交付（`0 FAIL · 0 REFLEX` 这种），**不许手写没跑过的数字**。
 

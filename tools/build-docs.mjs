@@ -274,6 +274,9 @@ ln -sfn "$PWD/skill" ~/.agents/skills/design-forge
 node skill/scripts/tokens.mjs deal --genre product
 node skill/scripts/tokens.mjs emit harbor --tailwind --out src/forge-tokens.css
 node skill/scripts/forge.mjs src/            # 静态检查
+node skill/scripts/forge.mjs src/ --detail full   # 每条附改法（brief / compact / full）
+node skill/scripts/forge.mjs src/ --json     # { apiVersion, type: "check.report", summary, findings, meta }
+node skill/scripts/forge.mjs --manifest      # 能力清单：参数 / 模式 / 退出码 / 错误码 / 输出形状
 node skill/scripts/forge.mjs src/ --render   # 八宽度渲染（需 Chrome + puppeteer-core）</code></pre>
       <p class="lede">会话里说「做个落地页」会自动加载；也可以 <code>/forge</code>、<code>/forge-audit</code>、<code>/forge-tokens</code> 直接进对应流程。</p>
     </div>

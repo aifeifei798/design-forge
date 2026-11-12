@@ -7,6 +7,7 @@
 - **无二进制、无遥测、无运行时下载**，只用 Node 标准库
 - **静态检查永远先跑**，渲染档可选（复用全局 `puppeteer-core` + Chrome）
 - **配方是数据**：8 套 `/ 改 JSON 就多一套
+- **人和 agent 同一个入口**：`--manifest` 自描述能力清单 + 稳定 `ERR_*` 错误码 + `brief|compact|full` 分档输出
 - **中文优先**：规则、审查报告、交付语言都是中文
 
 ## 结构
@@ -28,6 +29,7 @@ skill/
 fixtures/                    自测样例（bad 全违规，good 全干净）
 commands/                    opencode 斜杠命令（/forge、/forge-audit、/forge-redo、/forge-tokens）
 tools/build-docs.mjs         从规则与配方生成 docs/ 手册
+tools/check-manifest.mjs     契约测试：manifest / 错误码 / 规则清单 / JSON 信封不许漂移
 docs/                        生成的规则手册（GitHub Pages）
 ```
 
@@ -71,11 +73,22 @@ node skill/scripts/tokens.mjs emit harbor --tailwind --out src/app/forge-tokens.
 # 检查（静态）
 node skill/scripts/forge.mjs src/
 
+# 输出分档：brief 按档去重 / compact 带文件:行号（默认）/ full 每条附改法
+node skill/scripts/forge.mjs src/ --detail brief
+node skill/scripts/forge.mjs src/ --detail full
+
+# 机器读：带版本的信封 { apiVersion, type: "check.report", summary, findings, meta }
+node skill/scripts/forge.mjs src/ --json
+
 # 检查（八宽度渲染，先征得同意）
 node skill/scripts/forge.mjs src/ --render
 
 # 截图（落 .forge/shots/）
 node skill/scripts/forge.mjs src/index.html --shots
+
+# 能力清单（参数、模式、退出码、错误码、输出形状；人读 / 机器读）
+node skill/scripts/forge.mjs --manifest
+node skill/scripts/forge.mjs --manifest --json
 
 # 规则目录（人读 / 机器读）
 node skill/scripts/forge.mjs --list-rules
@@ -85,12 +98,14 @@ node skill/scripts/forge.mjs --list-rules --json
 node tools/build-docs.mjs
 ```
 
-退出码：`0` 无 FAIL，`2` 有 FAIL，`1` 运行失败。可以直接当 CI 门禁。
+退出码：`0` 无 FAIL，`2` 有 FAIL，`1` 用法或运行错误（`--json` 时返回 `type: "error"` + 稳定 `code`，如 `ERR_NO_TARGET` / `ERR_UNKNOWN_FLAG` / `ERR_TARGET_NOT_FOUND` / `ERR_NO_FILES`；完整列表见 `--manifest`）。可以直接当 CI 门禁。
+
+`--manifest` 是从参数表和规则表**派生**的，不是手写文档；`tools/check-manifest.mjs` 反过来断言每条声明都真实可用（参数能被解析、错误码能被触发、FAIL 规则都在 floor.md 里），所以清单不会和实现分叉。
 
 ## 自测
 
 ```bash
-npm test       # bad 必须 18 FAIL/退出 2，good 必须 0，docs 必须 0
+npm test       # bad 必须 18 FAIL/退出 2，good 必须 0，manifest 契约全过，docs 必须 0
 ```
 
 ## 为什么自己攒

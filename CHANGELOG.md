@@ -4,6 +4,25 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-12
+
+### Added
+
+- `forge.mjs --manifest`（人读 / `--json`）：自描述能力清单，从 `FLAGS` 参数表与 `RULES` 规则表派生——模式、参数、可选值、退出码、稳定错误码、输出形状、规则与配方，一条命令交给 agent 自己读。
+- `forge.mjs --detail brief|compact|full`：人读输出分档。`brief` 按档去重只列 id，`compact` 带文件:行号（默认，与旧输出一致），`full` 每条附改法；`--json` 始终完整。
+- 稳定错误码（`ERR_NO_TARGET` / `ERR_UNKNOWN_FLAG` / `ERR_MISSING_ARGUMENT` / `ERR_INVALID_OPTION` / `ERR_UNKNOWN_RECIPE` / `ERR_TARGET_NOT_FOUND` / `ERR_NO_FILES`），只增不改；人读时附「是不是想写」建议。
+- 未知参数 / 未知配方 / 非法 `--detail` 不再静默接受：拼错 `--recipe quar` 会提示 `quarry`。
+- `tools/check-manifest.mjs`（并入 `npm test`）：契约测试 40 项——每个声明参数都能被解析、每个声明错误码都能真实触发、`--list-rules` 与 manifest 与 `floor.md` 三处规则清单同步、`check.report` 信封字段不漂移。
+
+### Changed
+
+- `--json` 从裸对象升级为带版本的信封：`{ apiVersion: 1, type: "check.report", summary, findings, waived, render, meta }`；用法错误为 `{ apiVersion: 1, type: "error", error, code, suggestions? }`。旧的 `summary` / `findings` 字段位置不变，`tools/expect.mjs` 与 `tools/build-docs.mjs` 无需改动。
+- `--shots` 现在等同 `--render` + 截图（之前只认写在 `--render` 之后）。
+- `tokens.mjs` 用法错误退出码从 2 改为 1，与 `forge.mjs` 一致（2 只表示「检查出 FAIL」）。
+- 配方豁免从逐文件循环内移到循环之后，只生效一次。
+- 渲染档加载全局 `puppeteer-core` 时用 `fileURLToPath`，路径含空格不再出错。
+- 版本 0.5.0。
+
 ## [0.4.0] - 2026-10-27
 
 ### Added
