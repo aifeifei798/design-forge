@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+### Added
+
+- 每条 REFLEX 规则带 `waiveWhen` 豁免条件：`RULES` 表改四元组 `[tier, title, fix, waiveWhen?]`，出现在 `--list-rules --detail full` 的"豁免:"行与 `--json` 的 findings / rules.list 可选字段（只挂在 REFLEX 上）；`--waive` 的说明指向它，豁免从"自由写理由"升级为"对照条件判定"。`tools/check-manifest.mjs` 契约新增三项：REFLEX 必带且非空（FAIL/WARN 必不带）、check.report 同形状、REFLEX id 纳入 floor.md 覆盖断言（契约共 43 项）。
+- SKILL.md 触发描述改三段式：强制句 + 触发词 + 排除列表进 frontmatter（排除项原来只在正文，agent 不加载 skill 就看不到；触发词与排除列表落在 ZCode 注入截断的前 250 字符内）。
+- 交付约定升级：summary 行自带 forge 版本戳（`· forge v<版本>`）；交付里逐条披露实际影响改动的规则 id，禁止 context 压缩后凭记忆补写。
+- 防作弊条款与覆盖声明进 SKILL.md：不为清零改语义正确的代码、不翻检查器源码绕过；静态档只覆盖确定性规则，craft / Finish 靠对照 references 自查。
+- `DESIGN.md` 锁定的建议时机：用户在调性 / 配色上反复摇摆（两次以上推翻已定选择）时主动建议锁定。
+- EXTENDING.md 新增「规则的准入与退出」：eval 裁剪——新规则必须先证明当前主力模型会做错才准入，模型天然遵守的 REFLEX / WARN 定期降级或删除。
+
+### Changed
+
+- references 交叉引用升级为规则 id（craft / states / audit / floor），审查报告格式要求每条 Reflex 附豁免条件。
+- `tools/build-docs.mjs` 规则表 REFLEX 行显示豁免条件，扩展示例同步四元组。
+- NOTICE.md 登记 modern-web-guidance（思想借鉴，未使用其代码）。
+
 ## [0.5.0] - 2026-11-12
 
 ### Added

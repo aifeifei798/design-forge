@@ -18,6 +18,8 @@ Node 18+（CI 用 22）。没有构建步骤，没有打包，没有 lint 工具
 2. **文档是生成的**：`docs/` 由 `tools/build-docs.mjs` 从规则表与配方库产出，不要手改 `docs/index.html`。改了规则/配方要重跑 `node tools/build-docs.mjs` 并提交。
 3. **测出来才算数**：新增规则必须在 `fixtures/bad.html` 里加真实触发点，并把 `package.json` 里 `test:bad` 的期望数字改对；新增配方必须能 `emit` 出 token。交付里贴的检查结果必须是真跑的数字。
 
+规则不是只加不减：**新规则必须先证明当前主力模型会做错才准入**（裸跑几个真实任务，模型天然写对的不立）；模型天然遵守的 REFLEX / WARN 定期降级或删除——上下文预算要花在模型不知道的 gotcha 上。步骤见 [EXTENDING.md](EXTENDING.md) 的「规则的准入与退出」。
+
 ## 提交信息
 
 中文，一行主题 + 要点列表。前缀照常用：

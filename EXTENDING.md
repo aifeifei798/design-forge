@@ -7,8 +7,9 @@
 **改哪里**：`skill/scripts/forge.mjs` 顶部的 `RULES` 表 + 下方对应的扫描逻辑。
 
 ```js
-// ① RULES 表里加一行：[档位, 一句话问题, 一句改法]
-"type/line-height": ["REFLEX", "正文行高不在 1.5–1.65", "用 --leading-body token，别全局压 1.2"],
+// ① RULES 表里加一行：[档位, 一句话问题, 一句改法, 豁免条件]
+//    第 4 位（waiveWhen）只有 REFLEX 要填；FAIL / WARN 填 null，产出里就不带这个字段。
+"type/line-height": ["REFLEX", "正文行高不在 1.5–1.65", "用 --leading-body token，别全局压 1.2", "数据密集 UI（表格 / 代码块）刻意压行高的场合"],
 ```
 
 ```js
@@ -20,13 +21,22 @@ while ((m = lineHeight.exec(code))) {
 }
 ```
 
-⚠️ 三件必须同时做的事，否则 CI 会红或者规则会虚设：
+⚠️ 四件必须同时做的事，否则 CI 会红或者规则会虚设：
 
 1. **在 `fixtures/bad.html` 里加一个真实触发点**（不要只加规则不测）。
 2. **把期望的数量写进 `package.json`**：`test:bad` 里的 `18` 改成新的总数。
 3. 在 `skill/references/floor.md` 的对应档位表里补一行（id / 问题 / 为什么）。
+4. **REFLEX 必须给第 4 位 `waiveWhen`（豁免条件）**：写"检查器在什么真实场景下会误报 / 何时该保留"，对照扫描逻辑写，不写空话；FAIL / WARN 不许带。
 
-规则表和 `--manifest` 是同一份数据，所以 manifest / `--list-rules` 不用手改；`tools/check-manifest.mjs` 会断言新 FAIL 规则确实出现在 floor.md，漏写第 3 条会直接红。
+规则表和 `--manifest` 是同一份数据，所以 manifest / `--list-rules` 不用手改；`tools/check-manifest.mjs` 会断言新 FAIL / REFLEX 规则确实出现在 floor.md、每条 REFLEX 都有非空 waiveWhen 条件且 FAIL / WARN 都没有，漏写会直接红。
+
+### 规则的准入与退出（先证明模型会做错）
+
+规则表是上下文预算：每条规则都会被读进模型上下文，所以只放"模型自己会做错"的。
+
+- **准入**：立新规则前，先拿 2–3 个真实任务给当前主力模型裸跑（不加载本 skill）。模型天然写对的，不立规则——那是已知的最低公分母，占了上下文也不产生行为差。
+- **退出**：每个大版本把 `fixtures/bad.html` 里的场景对模型裸跑一遍；全部天然遵守的 REFLEX / WARN 规则降级或删除。规则总数只在出现新的坏习惯时才增。
+- 做法借鉴自 GoogleChrome/modern-web-guidance 的 eval 裁剪（见 NOTICE.md）。
 
 跑：
 

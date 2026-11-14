@@ -27,44 +27,47 @@ const recipeSlugs = () => {
 
 /* ------------------------------------------------------------------ 规则表 */
 
+// 四元组：[档位, 一句话问题, 一句改法, 豁免条件]。第 4 位只有 REFLEX 要填（waiveWhen，
+// 写"检查器在什么真实场景下会误报 / 何时该保留"）；FAIL 不可豁免、WARN 不阻塞，都填 null。
+// 契约测试（tools/check-manifest.mjs）会断言这个约定。
 const RULES = {
-  "color/literal": ["FAIL", "颜色没走 token", "把色值提进 :root / @theme 的 token 块，组件只引用 var(--x) 或语义类"],
-  "color/pure-extreme": ["REFLEX", "纯黑或纯白", "往主体色的色相里偏一点（oklch 里降一点 L 或加一点 C）"],
-  "tokens/missing": ["FAIL", "有颜色但没有 token 块", "加 :root 或 @theme，把所有色值集中声明"],
-  "font/literal": ["REFLEX", "字体族写死在规则里", "字体也只走 token（--font-display / --font-body）"],
-  "motion/transition-all": ["FAIL", "transition: all", "只过渡真正变化的属性：color、background-color、transform、opacity"],
-  "motion/layout-property": ["FAIL", "过渡布局属性", "width/height/top/left 的过渡会掉帧，改用 transform"],
-  "motion/no-reduced-motion": ["FAIL", "有动画但没有 reduced-motion 兜底", "加 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important } }"],
-  "motion/bounce-easing": ["REFLEX", "回弹缓动", "用指数型 ease-out，别用过冲曲线"],
-  "layout/overflow-x-hidden": ["FAIL", "overflow-x: hidden", "用 overflow-x: clip，hidden 会把 sticky/滚动容器一起弄坏"],
-  "layout/100vw": ["FAIL", "100vw", "100vw 在带滚动条的桌面会溢出，用 100% 或 dvw"],
-  "layout/viewport-height": ["REFLEX", "100vh / h-screen", "移动端地址栏会跳，首屏用 100svh 或 dvh"],
-  "a11y/html-lang": ["FAIL", "<html> 没有 lang", "补 lang=\"zh-CN\" 之类"],
-  "a11y/img-alt": ["FAIL", "<img> 没有 alt", "装饰图 alt=\"\"，内容图写清楚内容"],
-  "a11y/heading-skip": ["FAIL", "标题层级跳级", "h1 → h2 → h3，不跳级"],
-  "a11y/focus-visible": ["FAIL", "项目里没有 :focus-visible", "给所有可交互元素加 focus-visible 环，且不做延迟"],
-  "a11y/outline-none": ["REFLEX", "outline: none 没有替代焦点样式", "用 focus-visible:ring / :focus-visible { outline: 2px } 代替"],
-  "a11y/input-label": ["REFLEX", "输入框没有可访问名称", "加 <label for> 或 aria-label"],
-  "slop/purple-blue-gradient": ["FAIL", "紫→蓝渐变", "换掉；强调靠权重、尺寸或一个真实色块"],
-  "slop/eyebrow": ["FAIL", "标题上方的 eyebrow / 逐字间距小标签", "删掉那行标签，让标题自己扛"],
-  "slop/side-accent-border": ["REFLEX", "卡片/提示条上的彩色侧边线", "用背景色分层或留白，不要 1px 以上的侧边条"],
-  "slop/hard-shadow": ["REFLEX", "零模糊硬阴影", "只有配方声明了硬阴影才用，否则用带偏移和模糊的柔和阴影"],
-  "slop/nested-card": ["REFLEX", "卡片套卡片", "内层去掉边框/背景，用排版分层"],
-  "slop/gradient-text": ["REFLEX", "渐变文字", "强调用字重或字号"],
-  "slop/emoji": ["WARN", "emoji 当图形用", "换成真实图标或干脆不要图标"],
-  "type/tiny-text": ["REFLEX", "小于 12px 的文字", "正文最小 14px，说明文字最小 12px"],
-  "type/measure": ["REFLEX", "正文行宽超过 78ch", "正文 measure 控制在 65–75ch"],
-  "craft/important": ["WARN", "!important 过多", "提高选择器特异性或用 @layer"],
-  "craft/z-index": ["WARN", "z-index 用大整数", "建立 0–50 的层级 token"],
-  "render/overflow-x": ["FAIL", "渲染后出现横向溢出", "找出溢出元素，改 minmax(0,1fr) / overflow-wrap / 缩小固定宽度"],
-  "render/console-error": ["FAIL", "控制台报错", "先修错误再谈视觉"],
-  "render/no-puppeteer": ["WARN", "渲染档不可用", "npm i -g puppeteer-core 并提供 Chrome"],
+  "color/literal": ["FAIL", "颜色没走 token", "把色值提进 :root / @theme 的 token 块，组件只引用 var(--x) 或语义类", null],
+  "color/pure-extreme": ["REFLEX", "纯黑或纯白", "往主体色的色相里偏一点（oklch 里降一点 L 或加一点 C）", "配方或 DESIGN.md 刻意声明的纯色基线（如暗色配方的高对比墨色），且对比度自查通过"],
+  "tokens/missing": ["FAIL", "有颜色但没有 token 块", "加 :root 或 @theme，把所有色值集中声明", null],
+  "font/literal": ["REFLEX", "字体族写死在规则里", "字体也只走 token（--font-display / --font-body）", "一次性 demo / 原型页尚未定型，字体还没进 token；正式页面不适用"],
+  "motion/transition-all": ["FAIL", "transition: all", "只过渡真正变化的属性：color、background-color、transform、opacity", null],
+  "motion/layout-property": ["FAIL", "过渡布局属性", "width/height/top/left 的过渡会掉帧，改用 transform", null],
+  "motion/no-reduced-motion": ["FAIL", "有动画但没有 reduced-motion 兜底", "加 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important } }", null],
+  "motion/bounce-easing": ["REFLEX", "回弹缓动", "用指数型 ease-out，别用过冲曲线", "playful / arcade 类配方在按压等微反馈上刻意过冲；全局大动画不适用"],
+  "layout/overflow-x-hidden": ["FAIL", "overflow-x: hidden", "用 overflow-x: clip，hidden 会把 sticky/滚动容器一起弄坏", null],
+  "layout/100vw": ["FAIL", "100vw", "100vw 在带滚动条的桌面会溢出，用 100% 或 dvw", null],
+  "layout/viewport-height": ["REFLEX", "100vh / h-screen", "移动端地址栏会跳，首屏用 100svh 或 dvh", "目标环境没有浏览器地址栏（Electron / Tauri / 嵌入式 WebView），或明确只在桌面且不是首屏主视觉"],
+  "a11y/html-lang": ["FAIL", "<html> 没有 lang", "补 lang=\"zh-CN\" 之类", null],
+  "a11y/img-alt": ["FAIL", "<img> 没有 alt", "装饰图 alt=\"\"，内容图写清楚内容", null],
+  "a11y/heading-skip": ["FAIL", "标题层级跳级", "h1 → h2 → h3，不跳级", null],
+  "a11y/focus-visible": ["FAIL", "项目里没有 :focus-visible", "给所有可交互元素加 focus-visible 环，且不做延迟", null],
+  "a11y/outline-none": ["REFLEX", "outline: none 没有替代焦点样式", "用 focus-visible:ring / :focus-visible { outline: 2px } 代替", "该元素不参与键盘交互（装饰容器 / aria-hidden 区块），且项目里已有 focus-visible 体系"],
+  "a11y/input-label": ["REFLEX", "输入框没有可访问名称", "加 <label for> 或 aria-label", "输入框被 <label> 隐式包裹——检查器只看单个标签，看不到包裹式关联"],
+  "slop/purple-blue-gradient": ["FAIL", "紫→蓝渐变", "换掉；强调靠权重、尺寸或一个真实色块", null],
+  "slop/eyebrow": ["FAIL", "标题上方的 eyebrow / 逐字间距小标签", "删掉那行标签，让标题自己扛", null],
+  "slop/side-accent-border": ["REFLEX", "卡片/提示条上的彩色侧边线", "用背景色分层或留白，不要 1px 以上的侧边条", "语义性引用线（blockquote 等）的排版传统用法，且整页只出现一处"],
+  "slop/hard-shadow": ["REFLEX", "零模糊硬阴影", "只有配方声明了硬阴影才用，否则用带偏移和模糊的柔和阴影", "brutalist / 工业配方刻意声明硬阴影风格（首选 --recipe 校准，--waive 是兜底）"],
+  "slop/nested-card": ["REFLEX", "卡片套卡片", "内层去掉边框/背景，用排版分层", "数据结构本身嵌套（表格行内子卡、列表项详情卡），不是装饰性的卡片堆卡片"],
+  "slop/gradient-text": ["REFLEX", "渐变文字", "强调用字重或字号", "品牌资产一次性原样复刻（logo / 署名还原），不用于正文强调"],
+  "slop/emoji": ["WARN", "emoji 当图形用", "换成真实图标或干脆不要图标", null],
+  "type/tiny-text": ["REFLEX", "小于 12px 的文字", "正文最小 14px，说明文字最小 12px", "图表刻度、数据可视化标注等惯例上小于 12px 的场合"],
+  "type/measure": ["REFLEX", "正文行宽超过 78ch", "正文 measure 控制在 65–75ch", "数据容器（表格 / 代码块 / 仪表盘宽列）为容纳内容而超宽；正文段落不适用"],
+  "craft/important": ["WARN", "!important 过多", "提高选择器特异性或用 @layer", null],
+  "craft/z-index": ["WARN", "z-index 用大整数", "建立 0–50 的层级 token", null],
+  "render/overflow-x": ["FAIL", "渲染后出现横向溢出", "找出溢出元素，改 minmax(0,1fr) / overflow-wrap / 缩小固定宽度", null],
+  "render/console-error": ["FAIL", "控制台报错", "先修错误再谈视觉", null],
+  "render/no-puppeteer": ["WARN", "渲染档不可用", "npm i -g puppeteer-core 并提供 Chrome", null],
 };
 
 const TIER_ORDER = { FAIL: 0, REFLEX: 1, WARN: 2 };
 const TIERS = {
   FAIL: "不可豁免，必须修",
-  REFLEX: "修，或写明理由后豁免",
+  REFLEX: "修，或对照该规则的 waiveWhen 写明理由后豁免",
   WARN: "只提示不阻塞",
 };
 
@@ -77,7 +80,7 @@ const FLAGS = [
   { name: "render", flag: "--render", type: "boolean", description: "八宽度渲染档（需 puppeteer-core + Chrome；启动前先征得同意）" },
   { name: "shots", flag: "--shots", type: "boolean", implies: "render", description: "渲染档顺带截图到 .forge/shots/（等同 --render + 截图）" },
   { name: "recipe", flag: "--recipe", arg: "<slug>", type: "string", choicesFrom: "recipes", description: "按配方调整豁免（如 quarry 允许硬阴影）；未知 slug 直接报错" },
-  { name: "waive", flag: "--waive", arg: "id,id", type: "string", description: "豁免规则 id；交付里必须列出被豁免的条目" },
+  { name: "waive", flag: "--waive", arg: "id,id", type: "string", description: "豁免规则 id；REFLEX 规则必须对照其 waiveWhen（--list-rules 可见）判定可否豁免，交付里必须列出被豁免的条目" },
   { name: "noFail", flag: "--no-fail", type: "boolean", description: "有 FAIL 也退出 0（只用于必须继续跑后续步骤的场合）" },
   { name: "listRules", flag: "--list-rules", type: "boolean", description: "列出全部规则 id / 档位 / 改法，不需要目标" },
   { name: "manifest", flag: "--manifest", type: "boolean", description: "打印能力清单（参数、模式、退出码、错误码、输出形状、规则与配方），不需要目标" },
@@ -155,7 +158,10 @@ const detail = opt.detail ?? (listRules || showManifest ? "full" : "compact");
 /* ------------------------------------------------------------------ 清单 */
 
 function rulesAsData() {
-  return Object.entries(RULES).map(([id, [tier, title, fix]]) => ({ id, tier, title, fix }));
+  return Object.entries(RULES).map(([id, [tier, title, fix, waiveWhen]]) => ({
+    id, tier, title, fix,
+    ...(waiveWhen ? { waiveWhen } : {}),
+  }));
 }
 
 function manifestData() {
@@ -189,8 +195,8 @@ function manifestData() {
     ],
     errorCodes: ERROR_CODES,
     responseTypes: {
-      "check.report": { summary: "{ files, fail, reflex, warn, waived }", findings: "[{ file, id, tier, line, message, fix }]，按 FAIL→REFLEX→WARN 排序", waived: "被 --waive 命中的同形状条目", render: "渲染档结果或 null", meta: "{ version, node, detail, recipe, render, waivedBy }" },
-      "rules.list": { count: "规则总数", rules: "[{ id, tier, title, fix }]" },
+      "check.report": { summary: "{ files, fail, reflex, warn, waived }", findings: "[{ file, id, tier, line, message, fix, waiveWhen? }]，按 FAIL→REFLEX→WARN 排序；waiveWhen 只出现在 REFLEX", waived: "被 --waive 命中的同形状条目", render: "渲染档结果或 null", meta: "{ version, node, detail, recipe, render, waivedBy }" },
+      "rules.list": { count: "规则总数", rules: "[{ id, tier, title, fix, waiveWhen? }]，waiveWhen 只出现在 REFLEX" },
       manifest: { "…": "本对象" },
       error: { error: "人读消息", code: "稳定错误码，只增不改", suggestions: "可选，最接近的选项" },
     },
@@ -216,7 +222,10 @@ function printRules() {
   for (const r of rules) {
     if (detail === "brief") { console.log(`${r.tier.padEnd(6)} ${r.id}`); continue; }
     console.log(`${r.tier.padEnd(6)} ${r.id.padEnd(26)} ${r.title}`);
-    if (detail === "full") console.log(`       fix: ${r.fix}`);
+    if (detail === "full") {
+      console.log(`       fix: ${r.fix}`);
+      if (r.waiveWhen) console.log(`       豁免: ${r.waiveWhen}`);
+    }
   }
 }
 
@@ -369,7 +378,7 @@ const hasInteractive = /<(button|a\s|input|select|textarea)\b|role=["']button["'
 
 const findings = [];
 const add = (file, id, index, message, override) => {
-  const [tier, , fix] = RULES[id];
+  const [tier, , fix, waiveWhen] = RULES[id];
   findings.push({
     file,
     id,
@@ -377,6 +386,7 @@ const add = (file, id, index, message, override) => {
     line: index == null ? null : lineOf(source.get(file) ?? "", index),
     message: override?.message ?? message,
     fix: override?.fix ?? fix,
+    ...(waiveWhen ? { waiveWhen } : {}),
   });
 };
 
@@ -547,9 +557,11 @@ for (const file of files) {
   while ((m = zRe.exec(code))) add(file, "craft/z-index", m.index, m[0]);
 }
 
-/* 配方豁免：只跑一次，quarry 允许硬阴影 */
+/* 配方豁免：只跑一次，quarry 允许硬阴影（配方是声明在案的豁免，降级后不再需要 waiveWhen） */
 if (recipeSlug === "quarry") {
-  for (const f of findings) if (f.id === "slop/hard-shadow") f.tier = "WARN";
+  for (const f of findings) {
+    if (f.id === "slop/hard-shadow") { f.tier = "WARN"; delete f.waiveWhen; }
+  }
 }
 
 /* ------------------------------------------------------------ 渲染档（可选） */
@@ -723,12 +735,15 @@ if (json) {
       if (f.file !== current) { current = f.file; console.log(`\n${f.file}`); }
       const where = f.line ? `:${f.line}` : "—";
       console.log(`  ${f.tier.padEnd(6)} ${f.id.padEnd(27)} ${where.padEnd(8)} ${f.message}`);
-      if (detail === "full") console.log(`  ${" ".repeat(6)} ${"→ fix".padEnd(27)} ${" ".repeat(8)} ${f.fix}`);
+      if (detail === "full") {
+        console.log(`  ${" ".repeat(6)} ${"→ fix".padEnd(27)} ${" ".repeat(8)} ${f.fix}`);
+        if (f.waiveWhen) console.log(`  ${" ".repeat(6)} ${"→ waiveWhen".padEnd(27)} ${" ".repeat(8)} ${f.waiveWhen}`);
+      }
     }
     if (waived.length) console.log(`\nwaived: ${[...new Set(waived.map((w) => w.id))].join(", ")}`);
   }
   printRender();
-  console.log(`\n${summary.fail} FAIL · ${summary.reflex} REFLEX · ${summary.warn} WARN · ${summary.waived} waived · ${summary.files} file(s)`);
+  console.log(`\n${summary.fail} FAIL · ${summary.reflex} REFLEX · ${summary.warn} WARN · ${summary.waived} waived · ${summary.files} file(s) · forge v${PKG.version}`);
 }
 
 if (!noFail && summary.fail > 0) process.exit(2);

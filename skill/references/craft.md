@@ -20,7 +20,7 @@
 - 行高：正文 1.5–1.65；大标题 1.0–1.15；不要全局一个行高。
 - 字重：一个页面最多三档（如 400 / 500 / 700）；标题固定一档，别在同一层级混用。
 - 行宽：`max-width: 66ch`（token `--measure`），永远别让正文横跨 1400px。
-- 字距：大标题可以 `-0.02em`，最小不低于 `-0.04em`；**小写标签永远不要 `letter-spacing` + `uppercase` 组合**（Floor 13）。
+- 字距：大标题可以 `-0.02em`，最小不低于 `-0.04em`；**小写标签永远不要 `letter-spacing` + `uppercase` 组合**（Floor `slop/eyebrow`）。
 - 字体族最多两个，第三个必须是"角色字体"（等宽只给数字/代码）。
 - 中文正文配西文衬线要注意：衬线体只给标题和引文，正文用无衬线更稳。
 - 禁止：`text-align: justify` 用于中文短行、斜体单词嵌在正体标题里、用字号当层级唯一手段。
@@ -41,9 +41,9 @@
 - 对比度：正文与 placeholder ≥4.5:1，大字号（≥24px 或 ≥19px 粗体）≥3:1。检查器不做对比度计算，**你算一遍**。
 - 彩色底上的次要文字：从那个色相的墨色派生，不要用灰（灰压彩底是典型 AI 味）。
 - 强调色只占画面极小面积（按钮、一个数字、一条线）；一个页面一个强调色。
-- 暗色不是反色：纸用 L≈14–18%，墨用 L≈94% 且带一点纸的暖色相；纯 `#000`/`#fff` 是 Reflex。
+- 暗色不是反色：纸用 L≈14–18%，墨用 L≈94% 且带一点纸的暖色相；纯 `#000`/`#fff` 是 Reflex（`color/pure-extreme`，豁免条件见规则表）。
 - 状态色（成功/警告/危险）也要进 token，且与 accent 色相拉开 ≥60°。
-- 禁止：紫蓝渐变、双主色、彩色阴影、低透明度色块叠色块。
+- 禁止：紫蓝渐变（Floor `slop/purple-blue-gradient`）、双主色、彩色阴影、低透明度色块叠色块。
 
 ## 4. 布局与首屏
 
@@ -58,7 +58,7 @@
 
 - 只动 `transform` / `opacity` / `filter` / `clip-path`；时长 150–250ms（配方可给更慢），曲线 `--ease-forge`。
 - 一页最多一次入场动画，且内容在无脚本时可见（`@starting-style` 或先可见后动画）。
-- 必须有 `prefers-reduced-motion: reduce` 兜底（Floor 5）。
+- 必须有 `prefers-reduced-motion: reduce` 兜底（Floor `motion/no-reduced-motion`）。
 - hover 位移 ≤2px；不要缩放超过 1.02。
 - 交互反馈优先：按下、加载、成功失败，比滚动花活更有价值。
 
@@ -86,7 +86,7 @@
 
 ## 8. 浏览器自带件（最便宜的可信度）
 
-这些默认值不属于任何设计系统，必须一起设计：
+这些默认值不属于任何设计系统，必须一起设计（焦点环是 Floor `a11y/focus-visible`）：
 
 ```css
 ::selection { background: var(--accent); color: var(--paper); }
@@ -101,7 +101,7 @@ html { scrollbar-color: var(--muted) transparent; caret-color: var(--accent); }
 - 每个区块都是"图标 + 标题 + 两行说明"的三连卡片。
 - 首屏一个大数字 + 三个小统计。
 - 结尾必有邮件订阅输入框。
-- 渐变色文字、玻璃拟态装饰、彩色左边框提示条。
+- 渐变色文字（`slop/gradient-text`）、玻璃拟态装饰、彩色左边框提示条（`slop/side-accent-border`）。
 - 全站只有一个居中容器，所有内容都居中。
 - 用 emoji 当图标、用 `01 / 02 / 03` 当装饰序号（除非顺序本身有信息）。
 - 手写 `z-index: 9999`、`!important` 超过 3 处。

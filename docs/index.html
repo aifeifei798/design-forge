@@ -124,68 +124,68 @@
 
       <h3><span class="tier reflex">REFLEX</span> 有理由可豁免</h3>
       <table>
-        <caption>12 条，是模型的默认反射，有真实理由可以保留。</caption>
+        <caption>12 条，是模型的默认反射；有真实理由可以保留，豁免必须对照每条自带的豁免条件。</caption>
         <thead><tr><th class="n">#</th><th>规则 id</th><th>问题与改法</th></tr></thead>
         <tbody>
           <tr>
             <td class="n">1</td>
             <td><code>color/pure-extreme</code></td>
-            <td>纯黑或纯白<br><span class="slug">往主体色的色相里偏一点（oklch 里降一点 L 或加一点 C）</span></td>
+            <td>纯黑或纯白<br><span class="slug">往主体色的色相里偏一点（oklch 里降一点 L 或加一点 C）</span><br><span class="slug">豁免：配方或 DESIGN.md 刻意声明的纯色基线（如暗色配方的高对比墨色），且对比度自查通过</span></td>
           </tr>
           <tr>
             <td class="n">2</td>
             <td><code>font/literal</code></td>
-            <td>字体族写死在规则里<br><span class="slug">字体也只走 token（--font-display / --font-body）</span></td>
+            <td>字体族写死在规则里<br><span class="slug">字体也只走 token（--font-display / --font-body）</span><br><span class="slug">豁免：一次性 demo / 原型页尚未定型，字体还没进 token；正式页面不适用</span></td>
           </tr>
           <tr>
             <td class="n">3</td>
             <td><code>motion/bounce-easing</code></td>
-            <td>回弹缓动<br><span class="slug">用指数型 ease-out，别用过冲曲线</span></td>
+            <td>回弹缓动<br><span class="slug">用指数型 ease-out，别用过冲曲线</span><br><span class="slug">豁免：playful / arcade 类配方在按压等微反馈上刻意过冲；全局大动画不适用</span></td>
           </tr>
           <tr>
             <td class="n">4</td>
             <td><code>layout/viewport-height</code></td>
-            <td>100vh / h-screen<br><span class="slug">移动端地址栏会跳，首屏用 100svh 或 dvh</span></td>
+            <td>100vh / h-screen<br><span class="slug">移动端地址栏会跳，首屏用 100svh 或 dvh</span><br><span class="slug">豁免：目标环境没有浏览器地址栏（Electron / Tauri / 嵌入式 WebView），或明确只在桌面且不是首屏主视觉</span></td>
           </tr>
           <tr>
             <td class="n">5</td>
             <td><code>a11y/outline-none</code></td>
-            <td>outline: none 没有替代焦点样式<br><span class="slug">用 focus-visible:ring / :focus-visible { outline: 2px } 代替</span></td>
+            <td>outline: none 没有替代焦点样式<br><span class="slug">用 focus-visible:ring / :focus-visible { outline: 2px } 代替</span><br><span class="slug">豁免：该元素不参与键盘交互（装饰容器 / aria-hidden 区块），且项目里已有 focus-visible 体系</span></td>
           </tr>
           <tr>
             <td class="n">6</td>
             <td><code>a11y/input-label</code></td>
-            <td>输入框没有可访问名称<br><span class="slug">加 &lt;label for&gt; 或 aria-label</span></td>
+            <td>输入框没有可访问名称<br><span class="slug">加 &lt;label for&gt; 或 aria-label</span><br><span class="slug">豁免：输入框被 &lt;label&gt; 隐式包裹——检查器只看单个标签，看不到包裹式关联</span></td>
           </tr>
           <tr>
             <td class="n">7</td>
             <td><code>slop/side-accent-border</code></td>
-            <td>卡片/提示条上的彩色侧边线<br><span class="slug">用背景色分层或留白，不要 1px 以上的侧边条</span></td>
+            <td>卡片/提示条上的彩色侧边线<br><span class="slug">用背景色分层或留白，不要 1px 以上的侧边条</span><br><span class="slug">豁免：语义性引用线（blockquote 等）的排版传统用法，且整页只出现一处</span></td>
           </tr>
           <tr>
             <td class="n">8</td>
             <td><code>slop/hard-shadow</code></td>
-            <td>零模糊硬阴影<br><span class="slug">只有配方声明了硬阴影才用，否则用带偏移和模糊的柔和阴影</span></td>
+            <td>零模糊硬阴影<br><span class="slug">只有配方声明了硬阴影才用，否则用带偏移和模糊的柔和阴影</span><br><span class="slug">豁免：brutalist / 工业配方刻意声明硬阴影风格（首选 --recipe 校准，--waive 是兜底）</span></td>
           </tr>
           <tr>
             <td class="n">9</td>
             <td><code>slop/nested-card</code></td>
-            <td>卡片套卡片<br><span class="slug">内层去掉边框/背景，用排版分层</span></td>
+            <td>卡片套卡片<br><span class="slug">内层去掉边框/背景，用排版分层</span><br><span class="slug">豁免：数据结构本身嵌套（表格行内子卡、列表项详情卡），不是装饰性的卡片堆卡片</span></td>
           </tr>
           <tr>
             <td class="n">10</td>
             <td><code>slop/gradient-text</code></td>
-            <td>渐变文字<br><span class="slug">强调用字重或字号</span></td>
+            <td>渐变文字<br><span class="slug">强调用字重或字号</span><br><span class="slug">豁免：品牌资产一次性原样复刻（logo / 署名还原），不用于正文强调</span></td>
           </tr>
           <tr>
             <td class="n">11</td>
             <td><code>type/tiny-text</code></td>
-            <td>小于 12px 的文字<br><span class="slug">正文最小 14px，说明文字最小 12px</span></td>
+            <td>小于 12px 的文字<br><span class="slug">正文最小 14px，说明文字最小 12px</span><br><span class="slug">豁免：图表刻度、数据可视化标注等惯例上小于 12px 的场合</span></td>
           </tr>
           <tr>
             <td class="n">12</td>
             <td><code>type/measure</code></td>
-            <td>正文行宽超过 78ch<br><span class="slug">正文 measure 控制在 65–75ch</span></td>
+            <td>正文行宽超过 78ch<br><span class="slug">正文 measure 控制在 65–75ch</span><br><span class="slug">豁免：数据容器（表格 / 代码块 / 仪表盘宽列）为容纳内容而超宽；正文段落不适用</span></td>
           </tr>
         </tbody>
       </table>
@@ -331,7 +331,8 @@ node skill/scripts/forge.mjs src/ --render   # 八宽度渲染（需 Chrome + pu
       <h2>扩展</h2>
       <p class="lede">规则是表里的一行 + 一段扫描；配方是 JSON 里的一条数据。两个都不需要动框架。</p>
       <pre><code>// 加一条规则：skill/scripts/forge.mjs 顶部的 RULES 表
-"type/line-height": ["REFLEX", "正文行高不在 1.5–1.65", "用 --leading-body token"],
+// [档位, 问题, 改法, 豁免条件（只有 REFLEX 要填）]
+"type/line-height": ["REFLEX", "正文行高不在 1.5–1.65", "用 --leading-body token", "数据密集 UI 刻意压行高的场合"],
 
 // 加一套配方：skill/data/recipes.json
 { "slug": "kiln", "name": "Kiln", "genre": "editorial",

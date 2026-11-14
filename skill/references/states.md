@@ -11,7 +11,7 @@
 | default | 有边界或底色，明确可点 |
 | hover | ≤2px 位移或底色变化，不改变布局 |
 | active | 按下有轻微反馈（`translateY(0.5px)` / 更深的底色） |
-| focus-visible | 2px 实心环 + offset，**不做延迟、不靠动画淡入** |
+| focus-visible | 2px 实心环 + offset，**不做延迟、不靠动画淡入**（Floor `a11y/focus-visible`） |
 | disabled | 降透明度 + `cursor: not-allowed` + 不可聚焦（`disabled` 属性，不是 `pointer-events` 糊） |
 | loading | 保持宽度不变，内容换 spinner/骨架，禁用重复提交 |
 | error | 边框/文字用状态色，并在控件旁说明原因 |
@@ -28,7 +28,7 @@
 
 ## 2. 表单
 
-- 每个输入都有 `<label for>`；placeholder 只放示例（"例如：hello@example.com"），不放字段名。
+- 每个输入都有 `<label for>`（检查器管这个：`a11y/input-label`；被 `<label>` 包裹的隐式关联要对照 waiveWhen 豁免）；placeholder 只放示例（"例如：hello@example.com"），不放字段名。
 - 必填用 `required` + 文案说明；不要只用红星号。
 - 校验时机：失焦校验格式，提交校验全部；错误文案三段式（哪里错 / 为什么 / 怎么改）。
 - 错误必须 `aria-describedby` 关联到输入框；`aria-invalid="true"`。

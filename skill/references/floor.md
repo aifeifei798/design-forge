@@ -54,10 +54,12 @@
 
 ## 豁免怎么写
 
+每条 Reflex 规则自带豁免条件（waiveWhen）：`node forge.mjs --list-rules --detail full` 里"豁免:"一行。豁免理由必须对照它写——条件不符就不许豁免；`--waive` 只是把命中的条目移出计数，条件本身在规则表里。
+
 在交付里一行：
 
 ```
-Reflex 豁免：slop/hard-shadow（quarry 配方明确允许）· layout/viewport-height（固定 100vh 的看板截图页，不需要移动端）
+Reflex 豁免：slop/hard-shadow（brutalist 配方刻意声明，对照 waiveWhen）· layout/viewport-height（Electron 环境，无地址栏）
 ```
 
 豁免只对当次构建有效；写进 `.forge/state.json` 的 `waivers` 才跨次生效。

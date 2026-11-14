@@ -163,7 +163,7 @@ const ruleRows = (list) =>
       (r, i) => `          <tr>
             <td class="n">${i + 1}</td>
             <td><code>${esc(r.id)}</code></td>
-            <td>${esc(r.title)}<br><span class="slug">${esc(r.fix)}</span></td>
+            <td>${esc(r.title)}<br><span class="slug">${esc(r.fix)}</span>${r.waiveWhen ? `<br><span class="slug">豁免：${esc(r.waiveWhen)}</span>` : ""}</td>
           </tr>`,
     )
     .join("\n");
@@ -235,7 +235,7 @@ ${ruleRows(byTier.FAIL)}
 
       <h3><span class="tier reflex">REFLEX</span> 有理由可豁免</h3>
       <table>
-        <caption>${byTier.REFLEX.length} 条，是模型的默认反射，有真实理由可以保留。</caption>
+        <caption>${byTier.REFLEX.length} 条，是模型的默认反射；有真实理由可以保留，豁免必须对照每条自带的豁免条件。</caption>
         <thead><tr><th class="n">#</th><th>规则 id</th><th>问题与改法</th></tr></thead>
         <tbody>
 ${ruleRows(byTier.REFLEX)}
@@ -285,7 +285,8 @@ node skill/scripts/forge.mjs src/ --render   # 八宽度渲染（需 Chrome + pu
       <h2>扩展</h2>
       <p class="lede">规则是表里的一行 + 一段扫描；配方是 JSON 里的一条数据。两个都不需要动框架。</p>
       <pre><code>// 加一条规则：skill/scripts/forge.mjs 顶部的 RULES 表
-"type/line-height": ["REFLEX", "正文行高不在 1.5–1.65", "用 --leading-body token"],
+// [档位, 问题, 改法, 豁免条件（只有 REFLEX 要填）]
+"type/line-height": ["REFLEX", "正文行高不在 1.5–1.65", "用 --leading-body token", "数据密集 UI 刻意压行高的场合"],
 
 // 加一套配方：skill/data/recipes.json
 { "slug": "kiln", "name": "Kiln", "genre": "editorial",

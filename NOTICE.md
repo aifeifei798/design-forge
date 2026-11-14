@@ -39,6 +39,12 @@ design-forge 是原创实现：`skill/scripts/forge.mjs`（检查器）、`skill
 - https://agentskills.io/specification · https://opencode.ai/docs/skills/
 - 借鉴：`SKILL.md` 的 frontmatter 约定（`name` / `description` 驱动发现）、OpenCode 只识别 spec 子集且用 `commands/` 承载斜杠入口这一事实、skills 搜索路径（`~/.agents/skills`、`~/.config/opencode/skills`、`~/.claude/skills`、项目内 `.opencode/skills`）。
 
+### modern-web-guidance — Apache-2.0 — GoogleChrome（与 Edge / Firefox / MDN 团队协作）
+
+- https://github.com/googlechrome/modern-web-guidance
+- 借鉴：SKILL.md 触发描述的三段式写法（强制句 + 触发词列表 + 明确排除列表进 frontmatter，触发词落在 harness 截断长度之内）；给每条可豁免规则附"豁免条件"（对应其 keepWhen / dropWhen），并写明"不为凑 0 命中去改安全代码、不翻检查器源码绕过"的防作弊条款；用 eval 裁掉"模型已知最低公分母内容"的规则准入 / 退出思路；交付里逐条披露"哪个规则 id 影响了哪段改动"且禁止 context 压缩后凭记忆补写；版本戳贯穿交付；"静态扫描只覆盖确定性子集"的诚实声明。
+- 未使用：其 209 份指南正文、检索 CLI（embedding + BM25）、`npx` 分发与各 harness 插件清单、任何源码。
+
 ## 许可选择说明
 
 本项目用 **MIT**：

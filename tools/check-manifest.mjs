@@ -108,6 +108,17 @@ check("manifest.rules 与 rules.list 一致", JSON.stringify(data.rules) === JSO
 const floor = readFileSync(FLOOR, "utf8");
 const undocumented = rules.rules.filter((r) => r.tier === "FAIL" && !floor.includes(r.id)).map((r) => r.id);
 check("floor.md 覆盖全部 FAIL 规则", undocumented.length === 0, `缺 ${undocumented.join(", ")}`);
+const reflexUndocumented = rules.rules.filter((r) => r.tier === "REFLEX" && !floor.includes(r.id)).map((r) => r.id);
+check("floor.md 覆盖全部 REFLEX 规则", reflexUndocumented.length === 0, `缺 ${reflexUndocumented.join(", ")}`);
+check(
+  "waiveWhen: REFLEX 必带且非空，FAIL/WARN 必不带",
+  rules.rules.every((r) =>
+    r.tier === "REFLEX"
+      ? typeof r.waiveWhen === "string" && r.waiveWhen.trim().length >= 10
+      : !("waiveWhen" in r),
+  ),
+  rules.rules.filter((r) => r.tier === "REFLEX" && !(typeof r.waiveWhen === "string" && r.waiveWhen.trim().length >= 10)).map((r) => r.id).join(",") || "ok",
+);
 
 /* --------------------------------------------------------- check.report 形状 */
 
@@ -123,6 +134,14 @@ check(
   report.summary.fail + report.summary.reflex + report.summary.warn === report.findings.length && report.summary.waived === report.waived.length,
 );
 check("check.report: 每条 finding 字段齐全", report.findings.every((f) => f.file && f.id && f.tier && "line" in f && f.message && f.fix));
+check(
+  "check.report: REFLEX finding 带 waiveWhen，其他档不带",
+  report.findings.every((f) =>
+    f.tier === "REFLEX"
+      ? typeof f.waiveWhen === "string" && f.waiveWhen.trim().length >= 10
+      : !("waiveWhen" in f),
+  ),
+);
 check("check.report: 排序为 FAIL→REFLEX→WARN", report.findings.every((f, i, a) => i === 0 || ["FAIL", "REFLEX", "WARN"].indexOf(a[i - 1].tier) <= ["FAIL", "REFLEX", "WARN"].indexOf(f.tier)));
 check("check.report: meta 字段存在", ["version", "node", "detail", "recipe", "render", "waivedBy"].every((k) => k in (report.meta ?? {})));
 

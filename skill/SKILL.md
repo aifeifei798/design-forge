@@ -1,6 +1,6 @@
 ---
 name: design-forge
-description: "前端界面设计与视觉质量工作流（自建）：做/改网页、落地页、官网、产品页、仪表盘、UI 组件、表单、空态、设计系统与 token、配色排版动效、审查界面。含 31 条确定性规则（Floor 红线）、Tailwind v4 CSS-first token 方案、8 套 OKLCH 配方、检查器 forge.mjs（静态 + 可选八宽度渲染）。不用于纯图片提示词或后端任务。"
+description: "做/改任何网页 UI 必须先用本工作流：网页、落地页、官网、产品页、定价页、仪表盘、设置页、UI 组件、表单、空态、token 体系、配色排版动效、暗色模式、响应式、审查界面。不用于：纯图片提示词（走 image-prompt-router）、后端 / CLI / 数据管道、CI 脚本、原生客户端 UI、只改文案标点。含 31 条 Floor 红线、forge.mjs 确定性检查器（静态 + 可选八宽度渲染，--manifest 看机器接口）、Tailwind v4 CSS-first token 方案、8 套 OKLCH 配方。"
 version: 0.5.0
 license: MIT
 metadata:
@@ -30,7 +30,7 @@ metadata:
 | 档 | 含义 | 处理 |
 |---|---|---|
 | **Floor** | 不可豁免：对比度、焦点、reduced-motion、横向溢出、编造事实、可访问名称 | 必须修，不许交付 |
-| **Reflex** | 模型的条件反射，有理由可以豁免 | 修，或写明理由后豁免 |
+| **Reflex** | 模型的条件反射，有理由可以豁免 | 修，或对照该规则的 `waiveWhen` 豁免条件写明理由（`--list-rules --detail full` 每条 REFLEX 带"豁免:"行） |
 | **Finish** | 手艺细节，只记录不阻塞 | 逐条回答 yes/no |
 
 细则：[references/floor.md](references/floor.md)。检查器实现：`skill/scripts/forge.mjs`（`--list-rules` 看全部 id）。
@@ -61,6 +61,8 @@ metadata:
 - **骨架**：6–9 个区块（含首屏和页脚），每个区块一件真实内容；不要"功能三连 + 邮件订阅"的默认流水线。
 
 写在回复顶部的一个小块里（Shape / Recipe / Signature / Sections），这是用户唯一一次纠偏机会。
+
+用户在调性 / 配色上反复摇摆（推翻已定选择两次以上）时，别问第四轮：主动建议把已定的体系锁进项目根 `DESIGN.md`，之后它优先于配方与本文的风格建议。
 
 ### 3. 出配方
 
@@ -94,15 +96,18 @@ node <skill-dir>/scripts/forge.mjs <文件或目录> --render      # 八宽度�
 node <skill-dir>/scripts/forge.mjs --manifest                 # 能力清单：参数、模式、退出码、错误码、输出形状
 ```
 
-- FAIL 清零；REFLEX 逐条修或豁免（豁免用 `--waive id` 并在交付里列出来）；WARN 至少看一眼。
-- 输出三档：`--detail brief`（按档去重的 id 一行）、`compact`（默认，带文件:行号）、`full`（每条附改法）。`--json` 始终完整。
+- FAIL 清零；REFLEX 逐条修或豁免——豁免必须对照该规则的 `waiveWhen`（`--list-rules --detail full` 里有），条件不符就不许豁免；豁免用 `--waive id` 并在交付里列出来；WARN 至少看一眼。
+- 静态档只覆盖确定性规则；craft 手艺与 Finish 档检查器抓不到，要对照本次加载的 references 逐条自查。
+- 不许为了清零去改语义正确的代码，也不许翻 `forge.mjs` 源码找绕过；该豁免就豁免，写清楚即可。
+- 输出三档：`--detail brief`（按档去重的 id 一行）、`compact`（默认，带文件:行号）、`full`（每条附改法，REFLEX 另附豁免条件）。`--json` 始终完整。
 - `--json` 是带版本的信封：`{ apiVersion: 1, type: "check.report", summary, findings, waived, render, meta }`；用法错误时 `type: "error"` + 稳定 `code`（`ERR_*`，只增不改，非 0 退出）。
 - 渲染档只在需要验证横向溢出 / 控制台报错 / 真实断点时用；`--shots` 会落盘截图到 `.forge/shots/`，按本机截图政策先问。
-- 交付前跑 `--json`，把 summary 原样贴进交付（`0 FAIL · 0 REFLEX` 这种），**不许手写没跑过的数字**。
+- 交付前跑 `--json`，把 summary 原样贴进交付（检查器最后一行自带 `· forge v<版本>` 的版本戳）；数字与版本都不许手写没跑过的。
 
 ### 7. 交付
 
 - 一句结论 + 改了哪些文件 + 检查结果 + 剩下的素材缺口（每个槽位多大、该放什么）。
+- 实际影响了改动的规则逐条列 id（一行一条：`id` + 它拦住了什么），只列本次检查输出里出现过的；context 压缩后不许凭记忆补 id，拿不准就重跑检查。
 - 用户说"就这样"就停；不要自作主张继续加区块。
 
 ## 重做 / 审查

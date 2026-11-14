@@ -7,8 +7,8 @@
 ### 步骤
 
 1. 收集：`forge.mjs <目标> --json` 先跑静态档；能渲染且用户同意时加 `--render`。
-2. 人工过一遍下面四张表（检查器抓不到的）。
-3. 出报告：按 Floor / Reflex / Finish 分档，每条带位置，给改法一句话。
+2. 人工过一遍下面四张表（检查器只覆盖确定性规则，这部分是另一半）。
+3. 出报告：按 Floor / Reflex / Finish 分档，每条带位置与规则 id，给改法一句话；Reflex 条目附该规则的豁免条件（`waiveWhen`），让用户能判断能不能豁。
 
 ### 报告格式
 
@@ -22,8 +22,8 @@
 - `index.html:44` 三张卡片里写了"服务 500+ 客户"，无出处 → 删除或换成真实数字
 
 ## Reflex（建议修）
-- `index.html:62` eyebrow 组合 `uppercase tracking-widest text-xs` → 删掉那行
-- `card.css:8` `.card .inner-card` 嵌套卡片 → 内层去边框
+- `index.html:62` eyebrow 组合 `uppercase tracking-widest text-xs`（`slop/eyebrow`）→ 删掉那行
+- `card.css:8` `.card .inner-card` 嵌套卡片（`slop/nested-card`）→ 内层去边框
 
 ## Finish（记录）
 - 首屏 1280×800 内主 CTA 可见：yes
