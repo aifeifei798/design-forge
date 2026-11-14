@@ -1,10 +1,10 @@
 ---
 name: design-forge
 description: "做/改任何网页 UI 必须先用本工作流：网页、落地页、官网、产品页、定价页、仪表盘、设置页、UI 组件、表单、空态、token 体系、配色排版动效、暗色模式、响应式、审查界面。不用于：纯图片提示词（走 image-prompt-router）、后端 / CLI / 数据管道、CI 脚本、原生客户端 UI、只改文案标点。含 31 条 Floor 红线、forge.mjs 确定性检查器（静态 + 可选八宽度渲染，--manifest 看机器接口）、Tailwind v4 CSS-first token 方案、8 套 OKLCH 配方。"
-version: 0.5.0
+version: 0.6.0
 license: MIT
 metadata:
-  forge/version: "0.5.0"
+  forge/version: "0.6.0"
 ---
 
 # design-forge

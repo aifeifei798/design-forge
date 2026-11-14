@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-15
+
 ### Added
 
 - 每条 REFLEX 规则带 `waiveWhen` 豁免条件：`RULES` 表改四元组 `[tier, title, fix, waiveWhen?]`，出现在 `--list-rules --detail full` 的"豁免:"行与 `--json` 的 findings / rules.list 可选字段（只挂在 REFLEX 上）；`--waive` 的说明指向它，豁免从"自由写理由"升级为"对照条件判定"。`tools/check-manifest.mjs` 契约新增三项：REFLEX 必带且非空（FAIL/WARN 必不带）、check.report 同形状、REFLEX id 纳入 floor.md 覆盖断言（契约共 43 项）。
@@ -18,6 +20,7 @@
 - references 交叉引用升级为规则 id（craft / states / audit / floor），审查报告格式要求每条 Reflex 附豁免条件。
 - `tools/build-docs.mjs` 规则表 REFLEX 行显示豁免条件，扩展示例同步四元组。
 - NOTICE.md 登记 modern-web-guidance（思想借鉴，未使用其代码）。
+- 版本 0.6.0。
 
 ## [0.5.0] - 2026-11-12
 
